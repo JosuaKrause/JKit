@@ -1,10 +1,10 @@
-## JKit ##
+# JKit #
 
 This project provides a library of usefull java classes.
 To generate the api you can use the ANT-script for
 eclipse (build.xml).
 
-### jkit.ini ###
+## jkit.ini ##
 
 This package supplies an INI file reader.
 It can read and write INI files. The fields
