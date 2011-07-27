@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="all" name="build the jkit project">
+  <!-- important directories / files -->
+  <property name="src" location="src"/>
+  <property name="bin" location="bin"/>
+  <property name="api" location="jkit.jar"/>
+  <property name="apisrc" location="jkit_src.zip"/>
+  <!-- the actual targets -->
+  <target name="compile">
+    <mkdir dir="${bin}"/>
+    <!-- compile the whole source folder -->
+    <javac srcdir="${src}" destdir="${bin}" verbose="yes">
+    </javac>
+  </target>
+  <target name="jars">
+    <jar destfile="${api}">
+      <fileset dir="${bin}">
+      </fileset>
+    </jar>
+  </target>
+  <target name="src">
+    <zip destfile="${apisrc}">
+      <fileset dir="${src}">
+      </fileset>
+    </zip>
+  </target>
+  <!-- builds the targets in the given order -->
+  <target name="all"
+    depends="compile,jars,src"
+    description="Build all jars"
+    />
+</project>
