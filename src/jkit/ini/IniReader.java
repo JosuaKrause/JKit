@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -26,11 +25,6 @@ public class IniReader {
 	 * The name of the utf8 charset.
 	 */
 	public static final String UTF8_STR = "UTF-8";
-
-	/**
-	 * The utf8 charset.
-	 */
-	public static final Charset UTF8 = Charset.forName(UTF8_STR);
 
 	/**
 	 * The name of an entry.
@@ -750,40 +744,6 @@ public class IniReader {
 	public <T> boolean hasObject(final String area, final String name,
 			final Converter<T> converter) {
 		return getObject0(area, name, converter) != null;
-	}
-
-	/**
-	 * An extension to the {@link Converter}-Interface for array conversions.
-	 * 
-	 * @author Joschi <josua.krause@googlemail.com>
-	 * 
-	 * @param <T>
-	 *            The type of the object.
-	 * @see Converter
-	 */
-	public static interface ArrayConverter<T> extends Converter<T> {
-
-		/**
-		 * Creates a new array of the needed type and the given length.
-		 * 
-		 * @param length
-		 *            The length of the new array.
-		 * @return The array.
-		 */
-		T[] array(int length);
-
-		/**
-		 * @return The default value. It is returned when the field is not set
-		 *         or the Strings in the array cannot be converted.
-		 */
-		T[] defaultValue();
-
-		/**
-		 * @return The delimiter to separate array entries.
-		 * @see IniReader#DEFAULT_DELIMITER
-		 */
-		String delimiter();
-
 	}
 
 	public <T> T[] getArray(final String area, final String name,

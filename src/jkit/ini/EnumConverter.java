@@ -31,4 +31,23 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T> {
 		return Enum.valueOf(enumType, s);
 	}
 
+	public static <T extends Enum<T>> ArrayConverter<T> createEnumArrayConverter(
+			final Class<T> enumType, final T[] defaultValue,
+			final char delimiter) {
+		return createEnumArrayConverter(enumType, defaultValue, "" + delimiter);
+	}
+
+	public static <T extends Enum<T>> ArrayConverter<T> createEnumArrayConverter(
+			final Class<T> enumType, final T[] defaultValue) {
+		return createEnumArrayConverter(enumType, defaultValue,
+				IniReader.DEFAULT_DELIMITER);
+	}
+
+	public static <T extends Enum<T>> ArrayConverter<T> createEnumArrayConverter(
+			final Class<T> enumType, final T[] defaultValue,
+			final String delimiter) {
+		return new SimpleArrayConverter<T>(new EnumConverter<T>(enumType),
+				defaultValue, delimiter);
+	}
+
 }
