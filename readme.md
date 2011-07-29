@@ -6,9 +6,9 @@ eclipse (build.xml).
 
 ## jkit.ini ##
 
-This package supplies an INI file reader.
-It can read and write INI files. The fields
-are automatically converted as needed and
-one can create own converters for arbitrary
-objects.
+This package supplies an implementation
+for an INI file reader. It can read and
+write INI files. The fields are automatically
+converted as needed and one can create own
+converters for arbitrary objects.
 

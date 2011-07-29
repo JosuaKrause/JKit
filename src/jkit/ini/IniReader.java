@@ -709,11 +709,45 @@ public class IniReader {
 		return !res.isEmpty();
 	}
 
+	/**
+	 * Converts the String content of the field in an Object.
+	 * 
+	 * @param <T>
+	 *            The type of the Object.
+	 * @param area
+	 *            The area name. The name in [box brackets].
+	 * @param name
+	 *            The actual name of the value.
+	 * @param converter
+	 *            The converter to convert the String into the Object.
+	 * @return The object or <code>null</code> if the conversion has failed or
+	 *         the field was empty.
+	 * 
+	 * @see Converter
+	 */
 	public <T> T getObject(final String area, final String name,
 			final Converter<T> converter) {
 		return getObject0(area, name, converter);
 	}
 
+	/**
+	 * Converts the String content of the field in an Object.
+	 * 
+	 * @param <T>
+	 *            The type of the Object.
+	 * @param area
+	 *            The area name. The name in [box brackets].
+	 * @param name
+	 *            The actual name of the value.
+	 * @param converter
+	 *            The converter to convert the String into the Object.
+	 * @param defaultValue
+	 *            The String to convert if the original conversion failed or the
+	 *            field was empty.
+	 * @return The object.
+	 * 
+	 * @see Converter
+	 */
 	public <T> T getObject(final String area, final String name,
 			final Converter<T> converter, final String defaultValue) {
 		final T res = getObject(area, name, converter);
@@ -723,6 +757,24 @@ public class IniReader {
 		return res != null ? res : converter.convert(defaultValue);
 	}
 
+	/**
+	 * Converts the String content of the field in an Object.
+	 * 
+	 * @param <T>
+	 *            The type of the Object.
+	 * @param area
+	 *            The area name. The name in [box brackets].
+	 * @param name
+	 *            The actual name of the value.
+	 * @param converter
+	 *            The converter to convert the String into the Object.
+	 * @param defaultValue
+	 *            The Object to return if the original conversion failed or the
+	 *            field was empty.
+	 * @return The object.
+	 * 
+	 * @see Converter
+	 */
 	public <T> T getObject(final String area, final String name,
 			final Converter<T> converter, final T defaultValue) {
 		final T res = getObject(area, name, converter);
@@ -732,6 +784,7 @@ public class IniReader {
 		return res != null ? res : defaultValue;
 	}
 
+	/* The object worm hole */
 	private <T> T getObject0(final String area, final String name,
 			final Converter<T> converter) {
 		if (!has(area, name)) {
@@ -741,11 +794,44 @@ public class IniReader {
 		return converter.convert(str);
 	}
 
+	/**
+	 * Tests whether the String at the given field can be converted via the
+	 * given converter.
+	 * 
+	 * @param <T>
+	 *            The type of the conversion.
+	 * @param area
+	 *            The area name. The name in [box brackets].
+	 * @param name
+	 *            The actual name of the value.
+	 * @param converter
+	 *            The converter to test the String for.
+	 * @return Whether the String can be converted.
+	 * 
+	 * @see Converter
+	 */
 	public <T> boolean hasObject(final String area, final String name,
 			final Converter<T> converter) {
 		return getObject0(area, name, converter) != null;
 	}
 
+	/**
+	 * Returns a field interpreted as an array of arbitrary objects. The
+	 * original String is split by the delimiter and the results are converted
+	 * via the given converter.
+	 * 
+	 * @param <T>
+	 *            The component type of the resulting array.
+	 * @param area
+	 *            The area name. The name in [box brackets].
+	 * @param name
+	 *            The actual name of the value.
+	 * @param converter
+	 *            The converter for the array.
+	 * @return The resulting array.
+	 * 
+	 * @see ArrayConverter
+	 */
 	public <T> T[] getArray(final String area, final String name,
 			final ArrayConverter<T> converter) {
 		if (!has(area, name)) {
