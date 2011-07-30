@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project default="all" name="build the jkit project">
   <!-- important directories / files -->
+  <property name="license" location="LICENSE"/> 
   <property name="src" location="src"/>
   <property name="bin" location="bin"/>
   <property name="api" location="jkit.jar"/>
@@ -16,12 +17,14 @@
     <jar destfile="${api}">
       <fileset dir="${bin}">
       </fileset>
+      <fileset file="${license}"/>
     </jar>
   </target>
   <target name="src">
     <zip destfile="${apisrc}">
       <fileset dir="${src}">
       </fileset>
+      <fileset file="${license}"/>
     </zip>
   </target>
   <!-- builds the targets in the given order -->
