@@ -1,4 +1,6 @@
-package jkit.ini;
+package jkit.convert;
+
+import jkit.ini.IniReader;
 
 /**
  * Provides a generic enum converter. The enums to create can be set via the

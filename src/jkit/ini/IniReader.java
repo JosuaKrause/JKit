@@ -12,6 +12,9 @@ import java.util.Scanner;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import jkit.convert.ArrayConverter;
+import jkit.convert.Converter;
+
 /**
  * Reads out an INI file and presents its information as a simple name value
  * pair.

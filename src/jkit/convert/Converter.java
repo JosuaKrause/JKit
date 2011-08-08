@@ -1,4 +1,4 @@
-package jkit.ini;
+package jkit.convert;
 
 import java.io.File;
 

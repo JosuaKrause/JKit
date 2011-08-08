@@ -1,4 +1,5 @@
-package jkit.ini;
+package jkit.convert;
+
 
 /**
  * A converter that converts a String into a class and loads it.
