@@ -5,6 +5,7 @@ package jkit.csv;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -78,6 +79,12 @@ public class CSVReader {
 			return CSVReader.this;
 		}
 
+		@Override
+		public String toString() {
+			return "ctx[" + row + ":" + col + "](" + rowName() + ":"
+					+ colName() + ")";
+		}
+
 	}
 
 	private final char delimiter;
@@ -147,9 +154,8 @@ public class CSVReader {
 			} else if (endString) {
 				endString = false;
 				isString = false;
-				continue;
 			}
-			if (c == delimiter) {
+			if (c == delimiter && !isString) {
 				handle(hnd, current.toString(), ctx);
 				current = null;
 				continue;
@@ -212,6 +218,50 @@ public class CSVReader {
 
 	public boolean readRowTitles() {
 		return rowTitle;
+	}
+
+	public static void main(final String[] args) {
+		final CSVReader reader = new CSVReader();
+		reader.setHandler(new CSVHandler() {
+
+			@Override
+			public void start(final CSVContext ctx) {
+				System.out.println("start " + ctx);
+			}
+
+			@Override
+			public void rowTitle(final CSVContext ctx, final String title) {
+				System.out.println("rowTitle " + ctx + " Title: " + title);
+			}
+
+			@Override
+			public void row(final CSVContext ctx) {
+				System.out.println("row " + ctx);
+			}
+
+			@Override
+			public void end(final CSVContext ctx) {
+				System.out.println("end " + ctx);
+			}
+
+			@Override
+			public void colTitle(final CSVContext ctx, final String title) {
+				System.out.println("colTitle " + ctx + " Title: " + title);
+			}
+
+			@Override
+			public void cell(final CSVContext ctx, final String content) {
+				System.out.println("cell " + ctx + " ='" + content + "'");
+			}
+		});
+		final String str = "hallo;\"abc\"; buh ;\r\nbello;;"
+				+ "\"ab\"\"cd\";\"wu\r\nff\"\r\ngrr"
+				+ "rh;\"te;st\"\rblubb\nblubb;;";
+		try {
+			reader.read(new StringReader(str));
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
