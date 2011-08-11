@@ -124,6 +124,7 @@ public class CSVReader {
 		char line = 0x0;
 		boolean isString = false;
 		boolean endString = false;
+		boolean afterLn = false;
 		StringBuilder current = null;
 		int i;
 		while ((i = r.read()) != -1) {
@@ -134,11 +135,10 @@ public class CSVReader {
 			if (c == ignore && ignore != 0x0) {
 				continue;
 			}
-			if (line == 0x0) {
-				if (c == '\r' || c == '\n') {
-					line = c;
-					ignore = (c == '\r') ? '\n' : '\r';
-				}
+			afterLn = false;
+			if (line == 0x0 && (c == '\r' || c == '\n')) {
+				line = c;
+				ignore = (c == '\r') ? '\n' : '\r';
 			}
 			if (c == string) {
 				if (!endString) {
@@ -167,11 +167,12 @@ public class CSVReader {
 					line(ctx);
 					current = null;
 				}
+				afterLn = true;
 				continue;
 			}
 			current.append(c);
 		}
-		if (current != null) {
+		if (current != null && (current.length() > 0 || !afterLn)) {
 			handle(hnd, current.toString(), ctx);
 		}
 		hnd.end(ctx);
