@@ -162,6 +162,12 @@ public class CSVTest {
 			new Event(CELL, "stu"), new Event(CELL, "vwx"),
 			new Event(CELL, "yz_"), new Event(END) };
 
+	private static final String strTest2 = "a\"b;c\"d;e\"f;\"gh\"";
+
+	private static final Event[] evTest2 = new Event[] { new Event(START),
+			new Event(ROW), new Event(CELL, "a\"b"), new Event(CELL, "c\"d"),
+			new Event(CELL, "e\"f"), new Event(CELL, "gh"), new Event(END) };
+
 	private void doTest(final CSVReader reader, final String in,
 			final Event[] valid) throws Exception {
 		final TestHandler th = new TestHandler();
@@ -180,6 +186,11 @@ public class CSVTest {
 		doTest(new CSVReader(), strTest1r, evTest1);
 		doTest(new CSVReader(), strTest1rn, evTest1);
 		doTest(new CSVReader(), strTest1n, evTest1);
+	}
+
+	@Test
+	public void test2() throws Exception {
+		doTest(new CSVReader(), strTest2, evTest2);
 	}
 
 }
