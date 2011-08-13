@@ -20,6 +20,7 @@ import java.awt.RenderingHints.Key;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
@@ -28,13 +29,21 @@ import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
 
+import jkit.svg.event.ArcEvent;
+import jkit.svg.event.LineEvent;
+import jkit.svg.event.OvalEvent;
 import jkit.svg.event.ReceiverEvent;
+import jkit.svg.event.RectangleEvent;
+import jkit.svg.event.RoundRectEvent;
+import jkit.svg.event.SVGEvent;
 
 /**
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
 public class SVGGraphics extends Graphics2D {
+
+	public static boolean ERROR_ON_IGNORE = false;
 
 	private SVGEventReceiver receiver;
 
@@ -47,19 +56,23 @@ public class SVGGraphics extends Graphics2D {
 		// TODO:
 	}
 
+	private void e(final SVGEvent event) {
+		receiver.addEvent(event);
+	}
+
 	// clipping
 
 	@Override
 	public void clip(final Shape s) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void clipRect(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
@@ -85,13 +98,13 @@ public class SVGGraphics extends Graphics2D {
 	public void setClip(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void setClip(final Shape clip) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	// area operations
@@ -122,41 +135,63 @@ public class SVGGraphics extends Graphics2D {
 	public void drawArc(final int x, final int y, final int width,
 			final int height, final int startAngle, final int arcAngle) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new ArcEvent(x, y, width, height, startAngle, arcAngle, false));
 	}
 
 	@Override
 	public void drawLine(final int x1, final int y1, final int x2, final int y2) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new LineEvent(x1, y1, x2, y2));
 	}
 
 	@Override
 	public void drawOval(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void drawPolygon(final int[] xPoints, final int[] yPoints,
-			final int nPoints) {
-		ensureReady();
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void drawPolyline(final int[] xPoints, final int[] yPoints,
-			final int nPoints) {
-		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new OvalEvent(x, y, width, height, false));
 	}
 
 	@Override
 	public void drawRoundRect(final int x, final int y, final int width,
 			final int height, final int arcWidth, final int arcHeight) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new RoundRectEvent(x, y, width, height, arcWidth, arcHeight, false));
+	}
+
+	// polygons
+
+	private Shape createPolygon(final int[] x, final int[] y, final int n,
+			final boolean closed) {
+		final GeneralPath path = new GeneralPath();
+		if (n == 0) {
+			return path;
+		}
+		path.moveTo(x[0], y[0]);
+		for (int i = 1; i <= n; ++i) {
+			path.lineTo(x[i], y[i]);
+		}
+		if (closed) {
+			path.closePath();
+		}
+		return path;
+	}
+
+	@Override
+	public void drawPolygon(final int[] xPoints, final int[] yPoints,
+			final int nPoints) {
+		draw(createPolygon(xPoints, yPoints, nPoints, true));
+	}
+
+	@Override
+	public void drawPolyline(final int[] xPoints, final int[] yPoints,
+			final int nPoints) {
+		draw(createPolygon(xPoints, yPoints, nPoints, false));
+	}
+
+	@Override
+	public void fillPolygon(final int[] xPoints, final int[] yPoints,
+			final int nPoints) {
+		fill(createPolygon(xPoints, yPoints, nPoints, true));
 	}
 
 	// strings
@@ -190,8 +225,7 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void drawGlyphVector(final GlyphVector g, final float x,
 			final float y) {
-		ensureReady();
-		throw new UnsupportedOperationException();
+		draw(g.getOutline(x, y));
 	}
 
 	@Override
@@ -203,7 +237,7 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setFont(final Font font) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
@@ -306,35 +340,28 @@ public class SVGGraphics extends Graphics2D {
 	public void fillArc(final int x, final int y, final int width,
 			final int height, final int startAngle, final int arcAngle) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new ArcEvent(x, y, width, height, startAngle, arcAngle, true));
 	}
 
 	@Override
 	public void fillOval(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void fillPolygon(final int[] xPoints, final int[] yPoints,
-			final int nPoints) {
-		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new OvalEvent(x, y, width, height, true));
 	}
 
 	@Override
 	public void fillRect(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new RectangleEvent(x, y, width, height));
 	}
 
 	@Override
 	public void fillRoundRect(final int x, final int y, final int width,
 			final int height, final int arcWidth, final int arcHeight) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		e(new RoundRectEvent(x, y, width, height, arcWidth, arcHeight, true));
 	}
 
 	// styles
@@ -390,31 +417,31 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setComposite(final Composite comp) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void setPaint(final Paint paint) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void setStroke(final Stroke s) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void setPaintMode() {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void setXORMode(final Color c1) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	// transformation
@@ -469,8 +496,7 @@ public class SVGGraphics extends Graphics2D {
 
 	@Override
 	public void translate(final int x, final int y) {
-		ensureReady();
-		throw new UnsupportedOperationException();
+		translate((double) x, (double) y);
 	}
 
 	// rendering hints
@@ -478,7 +504,7 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void addRenderingHints(final Map<?, ?> hints) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
@@ -496,13 +522,13 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setRenderingHint(final Key hintKey, final Object hintValue) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	@Override
 	public void setRenderingHints(final Map<?, ?> hints) {
 		ensureReady();
-		throw new UnsupportedOperationException();
+		mayBeIgnored();
 	}
 
 	// maintenance
@@ -518,6 +544,12 @@ public class SVGGraphics extends Graphics2D {
 	private void ensureReady() {
 		if (isDisposed()) {
 			throw new IllegalStateException("context already disposed");
+		}
+	}
+
+	private void mayBeIgnored() {
+		if (ERROR_ON_IGNORE) {
+			throw new UnsupportedOperationException();
 		}
 	}
 
