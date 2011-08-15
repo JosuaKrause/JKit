@@ -5,12 +5,11 @@ package jkit.svg.event;
 
 import javax.xml.stream.XMLStreamWriter;
 
-
 /**
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
-public class ArcEvent implements SVGEvent {
+public class ArcEvent extends SVGEvent {
 
 	private final int x;
 

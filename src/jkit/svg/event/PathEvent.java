@@ -3,30 +3,22 @@
  */
 package jkit.svg.event;
 
+import java.awt.geom.PathIterator;
+
 import javax.xml.stream.XMLStreamWriter;
 
 /**
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
-public class OvalEvent extends SVGEvent {
+public class PathEvent extends SVGEvent {
 
-	private final int x;
-
-	private final int y;
-
-	private final int w;
-
-	private final int h;
+	private final PathIterator path;
 
 	private final boolean fill;
 
-	public OvalEvent(final int x, final int y, final int w, final int h,
-			final boolean fill) {
-		this.x = x;
-		this.y = y;
-		this.w = w;
-		this.h = h;
+	public PathEvent(final PathIterator path, final boolean fill) {
+		this.path = path;
 		this.fill = fill;
 	}
 

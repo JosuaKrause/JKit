@@ -14,7 +14,7 @@ import jkit.svg.SVGEventReceiver;
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
-public class ReceiverEvent implements SVGEvent, SVGEventReceiver {
+public class ReceiverEvent extends SVGEvent implements SVGEventReceiver {
 
 	private final List<SVGEvent> events;
 

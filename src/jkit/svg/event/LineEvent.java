@@ -9,7 +9,7 @@ import javax.xml.stream.XMLStreamWriter;
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
-public class LineEvent implements SVGEvent {
+public class LineEvent extends SVGEvent {
 
 	private final int x1;
 
