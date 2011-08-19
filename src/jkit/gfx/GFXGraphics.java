@@ -1,7 +1,16 @@
 /**
  * 
  */
-package jkit.svg;
+package jkit.gfx;
+
+import static jkit.gfx.GFXGraphics.Change.BACKGROUND;
+import static jkit.gfx.GFXGraphics.Change.COLOR;
+import static jkit.gfx.GFXGraphics.Change.COMPOSITE;
+import static jkit.gfx.GFXGraphics.Change.FONT;
+import static jkit.gfx.GFXGraphics.Change.PAINT;
+import static jkit.gfx.GFXGraphics.Change.RENDERING_HINTS;
+import static jkit.gfx.GFXGraphics.Change.STROKE;
+import static jkit.gfx.GFXGraphics.Change.TRANSFORM;
 
 import java.awt.Color;
 import java.awt.Composite;
@@ -21,6 +30,9 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
@@ -29,62 +41,87 @@ import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
 
-import jkit.svg.event.ArcEvent;
-import jkit.svg.event.ImageEvent;
-import jkit.svg.event.LineEvent;
-import jkit.svg.event.OvalEvent;
-import jkit.svg.event.PathEvent;
-import jkit.svg.event.ReceiverEvent;
-import jkit.svg.event.RectangleEvent;
-import jkit.svg.event.RoundRectEvent;
-import jkit.svg.event.SVGEvent;
-
 /**
  * @author Joschi <josua.krause@googlemail.com>
  * 
+ * @param <T>
+ *            The event type.
+ * 
  */
-public class SVGGraphics extends Graphics2D {
-
-	public static boolean ERROR_ON_IGNORE = false;
+public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 
 	private final Graphics2D gfx;
 
-	private SVGEventReceiver receiver;
+	private GFXEventReceiver<T> receiver;
 
-	public SVGGraphics(final SVGEventReceiver receiver, final Graphics2D gfx) {
-		this.receiver = receiver;
+	public GFXGraphics(final Graphics2D gfx) {
+		receiver = createReceiverEvent(false);
 		this.gfx = gfx;
 	}
 
-	private SVGGraphics(final SVGGraphics copy, final SVGEventReceiver receiver) {
-		this.receiver = receiver;
-		gfx = (Graphics2D) copy.gfx.create();
+	public GFXEventReceiver<T> getReceiver() {
+		ensureReady();
+		return receiver;
 	}
 
-	private void e(final SVGEvent event) {
+	private GFXGraphics<T> copy(final GFXEventReceiver<T> receiver,
+			final GFXGraphics<T> copy) {
+		return copy(receiver, (Graphics2D) copy.gfx.create());
+	}
+
+	protected abstract GFXEventReceiver<T> createReceiverEvent(boolean inner);
+
+	protected abstract GFXGraphics<T> copy(GFXEventReceiver<T> receiver,
+			Graphics2D gfx);
+
+	private void e(final T event) {
 		e(event, gfx);
 	}
 
-	private void e(final SVGEvent event, final Graphics2D gfx) {
+	private void e(final T event, final Graphics2D gfx) {
 		event.setGraphics(gfx);
 		receiver.addEvent(event);
 	}
 
+	public static enum Change {
+		FONT,
+
+		BACKGROUND,
+
+		COLOR,
+
+		COMPOSITE,
+
+		PAINT,
+
+		STROKE,
+
+		TRANSFORM,
+
+		RENDERING_HINTS,
+
+		;
+	}
+
+	protected abstract T createChangeEvent(Change changes);
+
 	// clipping
+
+	protected abstract T createClipEvent(Shape s);
+
+	protected abstract T createSetClipEvent(Shape s);
 
 	@Override
 	public void clip(final Shape s) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.clip(s);
+		e(createClipEvent(s));
 	}
 
 	@Override
 	public void clipRect(final int x, final int y, final int width,
 			final int height) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.clipRect(x, y, width, height);
+		clip(new Rectangle2D.Double(x, y, width, height));
 	}
 
 	@Override
@@ -109,43 +146,63 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setClip(final int x, final int y, final int width,
 			final int height) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.setClip(x, y, width, height);
+		setClip(new Rectangle2D.Double(x, y, width, height));
 	}
 
 	@Override
 	public void setClip(final Shape clip) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setClip(clip);
+		e(createSetClipEvent(clip));
 	}
 
 	// area operations
+
+	protected abstract T createClearRectEvent(Rectangle r);
+
+	protected abstract T createCopyAreaEvent(Rectangle r, int dx, int dy);
 
 	@Override
 	public void clearRect(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.clearRect(x, y, width, height);
+		e(createClearRectEvent(new Rectangle(x, y, width, height)));
 	}
 
 	@Override
 	public void copyArea(final int x, final int y, final int width,
 			final int height, final int dx, final int dy) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.copyArea(x, y, width, height, dx, dy);
+		e(createCopyAreaEvent(new Rectangle(x, y, width, height), dx, dy));
 	}
 
 	// drawing
+
+	protected abstract T createPathEvent(PathIterator path, boolean fill);
+
+	protected abstract T createArcEvent(final int x, final int y,
+			final int width, final int height, final int startAngle,
+			final int arcAngle, boolean fill);
+
+	protected abstract T createOvalEvent(final int x, final int y,
+			final int width, final int height, boolean fill);
+
+	protected abstract T createRoundRectEvent(final int x, final int y,
+			final int width, final int height, final int arcWidth,
+			final int arcHeight, boolean fill);
+
+	protected abstract T createLineEvent(Line2D line);
+
+	protected abstract T createRectangleEvent(final int x, final int y,
+			final int width, final int height);
 
 	@Override
 	public void draw(final Shape s) {
 		ensureReady();
 		gfx.draw(s);
-		e(new PathEvent(s.getPathIterator(null), false));
+		e(createPathEvent(s.getPathIterator(null), false));
 	}
 
 	@Override
@@ -153,14 +210,14 @@ public class SVGGraphics extends Graphics2D {
 			final int height, final int startAngle, final int arcAngle) {
 		ensureReady();
 		gfx.drawArc(x, y, width, height, startAngle, arcAngle);
-		e(new ArcEvent(x, y, width, height, startAngle, arcAngle, false));
+		e(createArcEvent(x, y, width, height, startAngle, arcAngle, false));
 	}
 
 	@Override
 	public void drawLine(final int x1, final int y1, final int x2, final int y2) {
 		ensureReady();
 		gfx.drawLine(x1, y1, x2, y2);
-		e(new LineEvent(x1, y1, x2, y2));
+		e(createLineEvent(new Line2D.Double(x1, y1, x2, y2)));
 	}
 
 	@Override
@@ -168,7 +225,7 @@ public class SVGGraphics extends Graphics2D {
 			final int height) {
 		ensureReady();
 		gfx.drawOval(x, y, width, height);
-		e(new OvalEvent(x, y, width, height, false));
+		e(createOvalEvent(x, y, width, height, false));
 	}
 
 	@Override
@@ -176,7 +233,7 @@ public class SVGGraphics extends Graphics2D {
 			final int height, final int arcWidth, final int arcHeight) {
 		ensureReady();
 		gfx.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
-		e(new RoundRectEvent(x, y, width, height, arcWidth, arcHeight, false));
+		e(createRoundRectEvent(x, y, width, height, arcWidth, arcHeight, false));
 	}
 
 	// polygons
@@ -217,12 +274,19 @@ public class SVGGraphics extends Graphics2D {
 
 	// strings
 
+	protected abstract T createStringEvent(AttributedCharacterIterator iterator);
+
+	protected abstract T createStringEvent(String string);
+
 	@Override
 	public void drawString(final AttributedCharacterIterator iterator,
 			final float x, final float y) {
 		ensureReady();
-		mayBeIgnored();
-		gfx.drawString(iterator, x, y);
+		final Graphics2D g = (Graphics2D) gfx.create();
+		g.translate(x, y);
+		g.drawString(iterator, 0, 0);
+		e(createStringEvent(iterator), g);
+		g.dispose();
 	}
 
 	@Override
@@ -234,8 +298,11 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void drawString(final String str, final float x, final float y) {
 		ensureReady();
-		mayBeIgnored();
-		gfx.drawString(str, x, y);
+		final Graphics2D g = (Graphics2D) gfx.create();
+		g.translate(x, y);
+		g.drawString(str, 0, 0);
+		e(createStringEvent(str), g);
+		g.dispose();
 	}
 
 	@Override
@@ -246,7 +313,7 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void drawGlyphVector(final GlyphVector g, final float x,
 			final float y) {
-		draw(g.getOutline(x, y));
+		fill(g.getOutline(x, y));
 	}
 
 	@Override
@@ -258,8 +325,8 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setFont(final Font font) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setFont(font);
+		e(createChangeEvent(FONT));
 	}
 
 	@Override
@@ -275,6 +342,8 @@ public class SVGGraphics extends Graphics2D {
 	}
 
 	// images
+
+	protected abstract T createImageEvent(Image img);
 
 	@Override
 	public void drawImage(final BufferedImage img, final BufferedImageOp op,
@@ -323,7 +392,7 @@ public class SVGGraphics extends Graphics2D {
 		final Graphics2D g = (Graphics2D) gfx.create();
 		g.translate(x, y);
 		final boolean b = g.drawImage(img, 0, 0, observer);
-		e(new ImageEvent(img), g);
+		e(createImageEvent(img), g);
 		g.dispose();
 		return b;
 	}
@@ -363,7 +432,7 @@ public class SVGGraphics extends Graphics2D {
 	public void fill(final Shape s) {
 		ensureReady();
 		gfx.fill(s);
-		e(new PathEvent(s.getPathIterator(null), true));
+		e(createPathEvent(s.getPathIterator(null), true));
 	}
 
 	@Override
@@ -371,7 +440,7 @@ public class SVGGraphics extends Graphics2D {
 			final int height, final int startAngle, final int arcAngle) {
 		ensureReady();
 		gfx.fillArc(x, y, width, height, startAngle, arcAngle);
-		e(new ArcEvent(x, y, width, height, startAngle, arcAngle, true));
+		e(createArcEvent(x, y, width, height, startAngle, arcAngle, true));
 	}
 
 	@Override
@@ -379,7 +448,7 @@ public class SVGGraphics extends Graphics2D {
 			final int height) {
 		ensureReady();
 		gfx.fillOval(x, y, width, height);
-		e(new OvalEvent(x, y, width, height, true));
+		e(createOvalEvent(x, y, width, height, true));
 	}
 
 	@Override
@@ -387,7 +456,7 @@ public class SVGGraphics extends Graphics2D {
 			final int height) {
 		ensureReady();
 		gfx.fillRect(x, y, width, height);
-		e(new RectangleEvent(x, y, width, height));
+		e(createRectangleEvent(x, y, width, height));
 	}
 
 	@Override
@@ -395,7 +464,7 @@ public class SVGGraphics extends Graphics2D {
 			final int height, final int arcWidth, final int arcHeight) {
 		ensureReady();
 		gfx.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
-		e(new RoundRectEvent(x, y, width, height, arcWidth, arcHeight, true));
+		e(createRoundRectEvent(x, y, width, height, arcWidth, arcHeight, true));
 	}
 
 	// styles
@@ -439,50 +508,52 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setBackground(final Color color) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setBackground(color);
+		e(createChangeEvent(BACKGROUND));
 	}
 
 	@Override
 	public void setColor(final Color c) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setColor(c);
+		e(createChangeEvent(COLOR));
 	}
 
 	@Override
 	public void setComposite(final Composite comp) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setComposite(comp);
+		e(createChangeEvent(COMPOSITE));
 	}
 
 	@Override
 	public void setPaint(final Paint paint) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setPaint(paint);
+		e(createChangeEvent(PAINT));
 	}
 
 	@Override
 	public void setStroke(final Stroke s) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setStroke(s);
+		e(createChangeEvent(STROKE));
 	}
+
+	protected abstract T createModeEvent(Color xorColor);
 
 	@Override
 	public void setPaintMode() {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setPaintMode();
+		e(createModeEvent(null));
 	}
 
 	@Override
 	public void setXORMode(final Color c1) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setXORMode(c1);
+		e(createModeEvent(c1));
 	}
 
 	// transformation
@@ -495,51 +566,41 @@ public class SVGGraphics extends Graphics2D {
 
 	@Override
 	public void rotate(final double theta) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.rotate(theta);
+		transform(AffineTransform.getRotateInstance(theta));
 	}
 
 	@Override
 	public void rotate(final double theta, final double x, final double y) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.rotate(theta, x, y);
+		transform(AffineTransform.getRotateInstance(theta, x, y));
 	}
 
 	@Override
 	public void scale(final double sx, final double sy) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.scale(sx, sy);
+		transform(AffineTransform.getScaleInstance(sx, sy));
 	}
 
 	@Override
 	public void setTransform(final AffineTransform Tx) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setTransform(Tx);
+		e(createChangeEvent(TRANSFORM));
 	}
 
 	@Override
 	public void shear(final double shx, final double shy) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.shear(shx, shy);
+		transform(AffineTransform.getShearInstance(shx, shy));
 	}
 
 	@Override
 	public void transform(final AffineTransform Tx) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.transform(Tx);
+		e(createChangeEvent(TRANSFORM));
 	}
 
 	@Override
 	public void translate(final double tx, final double ty) {
-		ensureReady();
-		mayBeIgnored();
-		gfx.translate(tx, ty);
+		transform(AffineTransform.getTranslateInstance(tx, ty));
 	}
 
 	@Override
@@ -552,8 +613,8 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void addRenderingHints(final Map<?, ?> hints) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.addRenderingHints(hints);
+		e(createChangeEvent(RENDERING_HINTS));
 	}
 
 	@Override
@@ -571,15 +632,15 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public void setRenderingHint(final Key hintKey, final Object hintValue) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setRenderingHint(hintKey, hintValue);
+		e(createChangeEvent(RENDERING_HINTS));
 	}
 
 	@Override
 	public void setRenderingHints(final Map<?, ?> hints) {
 		ensureReady();
-		mayBeIgnored();
 		gfx.setRenderingHints(hints);
+		e(createChangeEvent(RENDERING_HINTS));
 	}
 
 	// maintenance
@@ -587,20 +648,14 @@ public class SVGGraphics extends Graphics2D {
 	@Override
 	public Graphics create() {
 		ensureReady();
-		final ReceiverEvent event = new ReceiverEvent();
-		receiver.addEvent(event);
-		return new SVGGraphics(this, event);
+		final GFXEventReceiver<T> event = createReceiverEvent(true);
+		receiver.addEvent(event.getEvent());
+		return copy(event, this);
 	}
 
 	private void ensureReady() {
 		if (isDisposed()) {
 			throw new IllegalStateException("context already disposed");
-		}
-	}
-
-	private void mayBeIgnored() {
-		if (ERROR_ON_IGNORE) {
-			throw new UnsupportedOperationException();
 		}
 	}
 
