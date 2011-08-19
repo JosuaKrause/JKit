@@ -1,17 +1,21 @@
 /**
  * 
  */
-package jkit.csv;
+package jkit.io.csv;
 
-import static jkit.csv.CSVTest.EventType.CELL;
-import static jkit.csv.CSVTest.EventType.COL;
-import static jkit.csv.CSVTest.EventType.END;
-import static jkit.csv.CSVTest.EventType.ROW;
-import static jkit.csv.CSVTest.EventType.START;
+import static jkit.io.csv.CSVTest.EventType.CELL;
+import static jkit.io.csv.CSVTest.EventType.COL;
+import static jkit.io.csv.CSVTest.EventType.END;
+import static jkit.io.csv.CSVTest.EventType.ROW;
+import static jkit.io.csv.CSVTest.EventType.START;
 
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+
+import jkit.io.csv.CSVContext;
+import jkit.io.csv.CSVHandler;
+import jkit.io.csv.CSVReader;
 
 import org.junit.Test;
 

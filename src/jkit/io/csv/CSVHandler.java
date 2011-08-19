@@ -1,7 +1,7 @@
 /**
  * 
  */
-package jkit.csv;
+package jkit.io.csv;
 
 /**
  * @author Joschi <josua.krause@googlemail.com>

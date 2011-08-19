@@ -1,7 +1,7 @@
 /**
  * 
  */
-package jkit.csv;
+package jkit.io.csv;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -122,6 +122,7 @@ public class CSVReader {
 		hnd.start(ctx);
 		char ignore = 0x0;
 		char line = 0x0;
+		boolean canString = true;
 		boolean isString = false;
 		boolean endString = false;
 		boolean afterLn = false;
@@ -143,11 +144,14 @@ public class CSVReader {
 			if (c == string) {
 				if (!endString) {
 					if (!isString) {
-						isString = true;
+						if (canString) {
+							isString = true;
+							continue;
+						}
 					} else {
 						endString = true;
+						continue;
 					}
-					continue;
 				}
 				endString = false;
 			} else if (endString) {
@@ -157,8 +161,10 @@ public class CSVReader {
 			if (c == delimiter && !isString) {
 				handle(hnd, current.toString(), ctx);
 				current = null;
+				canString = true;
 				continue;
 			}
+			canString = false;
 			if (c == line) {
 				if (isString) {
 					current.append(NL);

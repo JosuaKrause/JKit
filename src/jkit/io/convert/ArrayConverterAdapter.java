@@ -1,8 +1,8 @@
-package jkit.convert;
+package jkit.io.convert;
 
 import java.lang.reflect.Array;
 
-import jkit.ini.IniReader;
+import jkit.io.ini.IniReader;
 
 /**
  * An adapter for the array converter. A subclass only has to implement the

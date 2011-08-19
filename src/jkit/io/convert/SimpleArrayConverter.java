@@ -1,6 +1,6 @@
-package jkit.convert;
+package jkit.io.convert;
 
-import jkit.ini.IniReader;
+import jkit.io.ini.IniReader;
 
 /**
  * A simple array converter.

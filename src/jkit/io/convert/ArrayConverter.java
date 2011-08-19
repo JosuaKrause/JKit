@@ -1,6 +1,6 @@
-package jkit.convert;
+package jkit.io.convert;
 
-import jkit.ini.IniReader;
+import jkit.io.ini.IniReader;
 
 /**
  * An extension to the {@link Converter}-Interface for array conversions.

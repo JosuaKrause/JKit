@@ -1,4 +1,4 @@
-package jkit.convert;
+package jkit.io.convert;
 
 
 /**
