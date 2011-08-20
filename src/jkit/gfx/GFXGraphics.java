@@ -54,8 +54,13 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 
 	private GFXEventReceiver<T> receiver;
 
-	public GFXGraphics(final Graphics2D gfx) {
-		receiver = createReceiverEvent(false);
+	public GFXGraphics(final Graphics2D gfx, final GFXEventReceiver<T> receiver) {
+		this.receiver = receiver;
+		this.gfx = gfx;
+	}
+
+	public GFXGraphics(final Graphics2D gfx, final int width, final int height) {
+		receiver = createReceiverEvent(width, height, false);
 		this.gfx = gfx;
 	}
 
@@ -69,7 +74,8 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 		return copy(receiver, (Graphics2D) copy.gfx.create());
 	}
 
-	protected abstract GFXEventReceiver<T> createReceiverEvent(boolean inner);
+	protected abstract GFXEventReceiver<T> createReceiverEvent(int width,
+			int height, boolean inner);
 
 	protected abstract GFXGraphics<T> copy(GFXEventReceiver<T> receiver,
 			Graphics2D gfx);
@@ -648,7 +654,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public Graphics create() {
 		ensureReady();
-		final GFXEventReceiver<T> event = createReceiverEvent(true);
+		final GFXEventReceiver<T> event = createReceiverEvent(-1, -1, true);
 		receiver.addEvent(event.getEvent());
 		return copy(event, this);
 	}

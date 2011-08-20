@@ -19,8 +19,14 @@ public abstract class GFXEventReceiver<T extends GFXEvent> implements
 
 	private final List<T> events;
 
-	public GFXEventReceiver() {
+	protected final int width;
+
+	protected final int height;
+
+	public GFXEventReceiver(final int width, final int height) {
 		events = new LinkedList<T>();
+		this.width = width;
+		this.height = height;
 	}
 
 	public final void addEvent(final T event) {

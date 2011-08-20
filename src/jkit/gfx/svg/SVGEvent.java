@@ -3,6 +3,7 @@
  */
 package jkit.gfx.svg;
 
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import jkit.gfx.GFXEvent;
@@ -13,6 +14,6 @@ import jkit.gfx.GFXEvent;
  */
 public abstract class SVGEvent extends GFXEvent {
 
-	public abstract void write(XMLStreamWriter out);
+	public abstract void write(XMLStreamWriter out) throws XMLStreamException;
 
 }

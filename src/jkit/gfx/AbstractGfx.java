@@ -24,11 +24,12 @@ public abstract class AbstractGfx<T extends GFXEvent> {
 
 	public AbstractGfx(final int width, final int height) {
 		img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		graphics = createGraphics(img.createGraphics());
+		graphics = createGraphics(img.createGraphics(), width, height);
 		event = graphics.getReceiver();
 	}
 
-	protected abstract GFXGraphics<T> createGraphics(Graphics2D gfx);
+	protected abstract GFXGraphics<T> createGraphics(Graphics2D gfx, int width,
+			int height);
 
 	public Graphics2D getGraphics() {
 		if (graphics.isDisposed()) {
