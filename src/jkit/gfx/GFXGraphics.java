@@ -9,7 +9,6 @@ import static jkit.gfx.GFXGraphics.Change.COMPOSITE;
 import static jkit.gfx.GFXGraphics.Change.FONT;
 import static jkit.gfx.GFXGraphics.Change.PAINT;
 import static jkit.gfx.GFXGraphics.Change.RENDERING_HINTS;
-import static jkit.gfx.GFXGraphics.Change.STROKE;
 import static jkit.gfx.GFXGraphics.Change.TRANSFORM;
 
 import java.awt.Color;
@@ -39,6 +38,7 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
+import java.text.CharacterIterator;
 import java.util.Map;
 
 /**
@@ -99,8 +99,6 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 		COMPOSITE,
 
 		PAINT,
-
-		STROKE,
 
 		TRANSFORM,
 
@@ -188,58 +186,35 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 
 	protected abstract T createPathEvent(PathIterator path, boolean fill);
 
-	protected abstract T createArcEvent(final int x, final int y,
-			final int width, final int height, final int startAngle,
-			final int arcAngle, boolean fill);
-
-	protected abstract T createOvalEvent(final int x, final int y,
-			final int width, final int height, boolean fill);
-
-	protected abstract T createRoundRectEvent(final int x, final int y,
-			final int width, final int height, final int arcWidth,
-			final int arcHeight, boolean fill);
-
-	protected abstract T createLineEvent(Line2D line);
-
-	protected abstract T createRectangleEvent(final int x, final int y,
-			final int width, final int height);
-
 	@Override
 	public void draw(final Shape s) {
 		ensureReady();
-		gfx.draw(s);
-		e(createPathEvent(s.getPathIterator(null), false));
+		final Shape n = gfx.getStroke().createStrokedShape(s);
+		gfx.draw(n);
+		e(createPathEvent(n.getPathIterator(null), false));
 	}
 
 	@Override
 	public void drawArc(final int x, final int y, final int width,
 			final int height, final int startAngle, final int arcAngle) {
-		ensureReady();
-		gfx.drawArc(x, y, width, height, startAngle, arcAngle);
-		e(createArcEvent(x, y, width, height, startAngle, arcAngle, false));
+		draw(createArc(x, y, width, height, startAngle, arcAngle));
 	}
 
 	@Override
 	public void drawLine(final int x1, final int y1, final int x2, final int y2) {
-		ensureReady();
-		gfx.drawLine(x1, y1, x2, y2);
-		e(createLineEvent(new Line2D.Double(x1, y1, x2, y2)));
+		draw(new Line2D.Double(x1, y1, x2, y2));
 	}
 
 	@Override
 	public void drawOval(final int x, final int y, final int width,
 			final int height) {
-		ensureReady();
-		gfx.drawOval(x, y, width, height);
-		e(createOvalEvent(x, y, width, height, false));
+		draw(createOval(x, y, width, height));
 	}
 
 	@Override
 	public void drawRoundRect(final int x, final int y, final int width,
 			final int height, final int arcWidth, final int arcHeight) {
-		ensureReady();
-		gfx.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
-		e(createRoundRectEvent(x, y, width, height, arcWidth, arcHeight, false));
+		draw(createRoundRect(x, y, width, height, arcWidth, arcHeight));
 	}
 
 	// polygons
@@ -280,18 +255,17 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 
 	// strings
 
-	protected abstract T createStringEvent(AttributedCharacterIterator iterator);
-
-	protected abstract T createStringEvent(String string);
-
 	@Override
-	public void drawString(final AttributedCharacterIterator iterator,
-			final float x, final float y) {
+	public void drawString(final AttributedCharacterIterator it, final float x,
+			final float y) {
 		ensureReady();
 		final Graphics2D g = (Graphics2D) gfx.create();
 		g.translate(x, y);
-		g.drawString(iterator, 0, 0);
-		e(createStringEvent(iterator), g);
+		char c;
+		while ((c = it.next()) != CharacterIterator.DONE) {
+			System.out.println(c);
+			throw new UnsupportedOperationException();
+		}
 		g.dispose();
 	}
 
@@ -304,11 +278,9 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public void drawString(final String str, final float x, final float y) {
 		ensureReady();
-		final Graphics2D g = (Graphics2D) gfx.create();
-		g.translate(x, y);
-		g.drawString(str, 0, 0);
-		e(createStringEvent(str), g);
-		g.dispose();
+		final GlyphVector gv = gfx.getFont().createGlyphVector(
+				gfx.getFontRenderContext(), str);
+		fill(gv.getOutline(x, y));
 	}
 
 	@Override
@@ -437,40 +409,74 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public void fill(final Shape s) {
 		ensureReady();
-		gfx.fill(s);
-		e(createPathEvent(s.getPathIterator(null), true));
+		final Shape n = gfx.getStroke().createStrokedShape(s);
+		gfx.fill(n);
+		e(createPathEvent(n.getPathIterator(null), true));
 	}
 
 	@Override
 	public void fillArc(final int x, final int y, final int width,
 			final int height, final int startAngle, final int arcAngle) {
-		ensureReady();
-		gfx.fillArc(x, y, width, height, startAngle, arcAngle);
-		e(createArcEvent(x, y, width, height, startAngle, arcAngle, true));
+		fill(createArc(x, y, width, height, startAngle, arcAngle));
+	}
+
+	private Shape createArc(final double x, final double y, final double w,
+			final double h, final double sa, final double aa) {
+		throw new UnsupportedOperationException();
+	}
+
+	private Shape createOval(final double l, final double t, final double w,
+			final double h) {
+		final GeneralPath gp = new GeneralPath();
+		final double b = t + h;
+		final double r = l + w;
+		final double x = l + w * 0.5;
+		final double y = t + h * 0.5;
+		gp.moveTo(x, t);
+		gp.quadTo(r, t, r, y);
+		gp.quadTo(r, b, x, b);
+		gp.quadTo(l, b, l, y);
+		gp.quadTo(l, t, x, t);
+		return gp;
+	}
+
+	private Shape createRoundRect(final double l, final double t,
+			final double w, final double h, final double rx, final double ry) {
+		final GeneralPath gp = new GeneralPath();
+		final double b = t + h;
+		final double r = l + w;
+		final double l1 = l + rx;
+		final double r1 = r - rx;
+		final double t1 = t + ry;
+		final double b1 = b - ry;
+		gp.moveTo(r1, t);
+		gp.quadTo(r, t, r, t1);
+		gp.lineTo(r, b1);
+		gp.quadTo(r, b, r1, b);
+		gp.lineTo(l1, b);
+		gp.quadTo(l, b, l, b1);
+		gp.lineTo(l, t1);
+		gp.quadTo(l, t, l1, t);
+		gp.closePath();
+		return gp;
 	}
 
 	@Override
 	public void fillOval(final int x, final int y, final int width,
 			final int height) {
-		ensureReady();
-		gfx.fillOval(x, y, width, height);
-		e(createOvalEvent(x, y, width, height, true));
+		fill(createOval(x, y, width, height));
 	}
 
 	@Override
 	public void fillRect(final int x, final int y, final int width,
 			final int height) {
-		ensureReady();
-		gfx.fillRect(x, y, width, height);
-		e(createRectangleEvent(x, y, width, height));
+		fill(new Rectangle2D.Double(x, y, width, height));
 	}
 
 	@Override
 	public void fillRoundRect(final int x, final int y, final int width,
 			final int height, final int arcWidth, final int arcHeight) {
-		ensureReady();
-		gfx.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
-		e(createRoundRectEvent(x, y, width, height, arcWidth, arcHeight, true));
+		fill(createRoundRect(x, y, width, height, arcWidth, arcHeight));
 	}
 
 	// styles
@@ -543,7 +549,6 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void setStroke(final Stroke s) {
 		ensureReady();
 		gfx.setStroke(s);
-		e(createChangeEvent(STROKE));
 	}
 
 	protected abstract T createModeEvent(Color xorColor);

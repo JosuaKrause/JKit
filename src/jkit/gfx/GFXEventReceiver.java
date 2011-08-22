@@ -3,8 +3,8 @@
  */
 package jkit.gfx;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -24,7 +24,7 @@ public abstract class GFXEventReceiver<T extends GFXEvent> implements
 	protected final int height;
 
 	public GFXEventReceiver(final int width, final int height) {
-		events = new LinkedList<T>();
+		events = new ArrayList<T>();
 		this.width = width;
 		this.height = height;
 	}
