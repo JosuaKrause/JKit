@@ -47,7 +47,7 @@ public class SVGGraphics extends GFXGraphics {
 	}
 
 	private String getColorString(final Color c) {
-		final String hex = "000000" + Integer.toHexString(c.getRGB());
+		final String hex = "00000" + Integer.toHexString(c.getRGB());
 		return "#" + hex.substring(hex.length() - 6);
 	}
 
@@ -73,12 +73,6 @@ public class SVGGraphics extends GFXGraphics {
 			colorT = getColorTransparency(c);
 			break;
 		}
-		case BACKGROUND: {
-			final Color b = gfx.getBackground();
-			background = getColorString(b);
-			backgroundT = getColorTransparency(b);
-			break;
-		}
 		default:
 			// TODO
 			ignore("ignored " + change);
@@ -96,35 +90,24 @@ public class SVGGraphics extends GFXGraphics {
 
 	private String colorT = "" + 1;
 
-	private String background = getColorString(Color.WHITE);
-
-	private String backgroundT = "" + 1;
-
 	private void writeStyle(final SVGWriter out, final boolean fill) {
 		final StringBuilder sb = new StringBuilder();
-		if (fill) {
-			sb.append("fill:");
-			sb.append(background);
-			sb.append(";stroke:none;fill-opacity:");
-			sb.append(backgroundT);
-			sb.append(';');
-		} else {
-			sb.append("fill:none;stroke:");
-			sb.append(color);
-			sb.append(";stroke-width:1.0;stroke-opacity:");
-			sb.append(colorT);
-			sb.append(';');
-		}
-		sb.append("fill-rule:");
+		sb.append("fill:");
+		sb.append(color);
+		sb.append(";fill-opacity:");
+		sb.append(colorT);
+		sb.append(";stroke:");
+		sb.append(color);
+		sb.append(";stroke-width:1.0;stroke-opacity:");
+		sb.append(colorT);
+		sb.append(";fill-rule:");
 		if (fill) {
 			sb.append("evenodd");
 		} else {
 			sb.append("nonzero");
 		}
 		sb.append(';');
-		if (sb.length() > 0) {
-			out.writeAttribute("style", sb.toString());
-		}
+		out.writeAttribute("style", sb.toString());
 	}
 
 	private void writeCoords(final StringBuilder sb, final double[] arr,
@@ -177,12 +160,12 @@ public class SVGGraphics extends GFXGraphics {
 	}
 
 	@Override
-	protected void doPathEvent(final PathIterator path) {
+	protected void doPathEvent(final PathIterator path, final boolean fill) {
 		final String d = createD(path).toString();
 		out.writeEmptyElement("path");
 		out.writeAttribute("d", d);
 		writeTransform(out);
-		writeStyle(out, path.getWindingRule() == PathIterator.WIND_EVEN_ODD);
+		writeStyle(out, fill);
 	}
 
 	@Override

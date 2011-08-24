@@ -6,7 +6,10 @@ package jkit.gfx.svg;
 import java.awt.Graphics2D;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
 
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import jkit.gfx.AbstractGfx;
@@ -45,6 +48,16 @@ public class SVG extends AbstractGfx implements Closeable {
 		}
 		out.close();
 		out = null;
+	}
+
+	private static XMLOutputFactory XML_FACTORY = null;
+
+	public static final SVG createInstance(final OutputStream out,
+			final int width, final int height) throws XMLStreamException {
+		if (XML_FACTORY == null) {
+			XML_FACTORY = XMLOutputFactory.newInstance();
+		}
+		return new SVG(XML_FACTORY.createXMLStreamWriter(out), width, height);
 	}
 
 }

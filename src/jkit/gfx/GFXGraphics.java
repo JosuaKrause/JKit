@@ -154,34 +154,17 @@ public abstract class GFXGraphics extends Graphics2D {
 
 	// drawing
 
-	protected abstract void doPathEvent(PathIterator path);
+	protected abstract void doPathEvent(PathIterator path, boolean fill);
 
-	private void paintShape(Shape s, final boolean fill) {
+	private void paintShape(final Shape s, final boolean fill) {
 		ensureReady();
-		switch (s.getPathIterator(null).getWindingRule()) {
-		case PathIterator.WIND_EVEN_ODD:
-			if (!fill) {
-				final GeneralPath gp = new GeneralPath(s);
-				gp.setWindingRule(PathIterator.WIND_NON_ZERO);
-				s = gp;
-				gfx.draw(s);
-			} else {
-				gfx.fill(s);
-			}
-			break;
-		case PathIterator.WIND_NON_ZERO:
-			if (fill) {
-				final GeneralPath gp = new GeneralPath(s);
-				gp.setWindingRule(PathIterator.WIND_EVEN_ODD);
-				s = gp;
-				gfx.draw(s);
-			} else {
-				gfx.draw(s);
-			}
-			break;
+		if (fill) {
+			gfx.draw(s);
+		} else {
+			gfx.fill(s);
 		}
 		final Shape n = gfx.getStroke().createStrokedShape(s);
-		doPathEvent(n.getPathIterator(null));
+		doPathEvent(n.getPathIterator(null), fill);
 	}
 
 	@Override

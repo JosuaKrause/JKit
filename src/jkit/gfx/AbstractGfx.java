@@ -3,8 +3,8 @@
  */
 package jkit.gfx;
 
+import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 
 /**
@@ -35,9 +35,13 @@ public abstract class AbstractGfx {
 		return graphics;
 	}
 
-	public Image getResultingImage() {
-		return img.getScaledInstance(img.getWidth(), img.getHeight(),
-				Image.SCALE_FAST);
+	public BufferedImage getResultingImage() {
+		final BufferedImage res = new BufferedImage(img.getWidth(), img
+				.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		final Graphics g = res.getGraphics();
+		g.drawImage(img, 0, 0, null);
+		g.dispose();
+		return res;
 	}
 
 }
