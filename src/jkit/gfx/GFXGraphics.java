@@ -44,50 +44,20 @@ import java.util.Map;
 /**
  * @author Joschi <josua.krause@googlemail.com>
  * 
- * @param <T>
- *            The event type.
- * 
  */
-public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
+public abstract class GFXGraphics extends Graphics2D {
 
-	private final Graphics2D gfx;
+	protected Graphics2D gfx;
 
-	private GFXEventReceiver<T> receiver;
-
-	public GFXGraphics(final Graphics2D gfx, final GFXEventReceiver<T> receiver) {
-		this.receiver = receiver;
+	public GFXGraphics(final Graphics2D gfx) {
 		this.gfx = gfx;
 	}
 
-	public GFXGraphics(final Graphics2D gfx, final int width, final int height) {
-		receiver = createReceiverEvent(width, height, false);
-		this.gfx = gfx;
+	private GFXGraphics copy(final GFXGraphics copy) {
+		return copy((Graphics2D) copy.gfx.create());
 	}
 
-	public GFXEventReceiver<T> getReceiver() {
-		ensureReady();
-		return receiver;
-	}
-
-	private GFXGraphics<T> copy(final GFXEventReceiver<T> receiver,
-			final GFXGraphics<T> copy) {
-		return copy(receiver, (Graphics2D) copy.gfx.create());
-	}
-
-	protected abstract GFXEventReceiver<T> createReceiverEvent(int width,
-			int height, boolean inner);
-
-	protected abstract GFXGraphics<T> copy(GFXEventReceiver<T> receiver,
-			Graphics2D gfx);
-
-	private void e(final T event) {
-		e(event, gfx);
-	}
-
-	private void e(final T event, final Graphics2D gfx) {
-		event.setGraphics(gfx);
-		receiver.addEvent(event);
-	}
+	protected abstract GFXGraphics copy(Graphics2D gfx);
 
 	public static enum Change {
 		FONT,
@@ -107,19 +77,19 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 		;
 	}
 
-	protected abstract T createChangeEvent(Change changes);
+	protected abstract void doChangeEvent(Change changes);
 
 	// clipping
 
-	protected abstract T createClipEvent(Shape s);
+	protected abstract void doClipEvent(Shape s);
 
-	protected abstract T createSetClipEvent(Shape s);
+	protected abstract void doSetClipEvent(Shape s);
 
 	@Override
 	public void clip(final Shape s) {
 		ensureReady();
 		gfx.clip(s);
-		e(createClipEvent(s));
+		doClipEvent(s);
 	}
 
 	@Override
@@ -157,21 +127,21 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void setClip(final Shape clip) {
 		ensureReady();
 		gfx.setClip(clip);
-		e(createSetClipEvent(clip));
+		doSetClipEvent(clip);
 	}
 
 	// area operations
 
-	protected abstract T createClearRectEvent(Rectangle r);
+	protected abstract void doClearRectEvent(Rectangle r);
 
-	protected abstract T createCopyAreaEvent(Rectangle r, int dx, int dy);
+	protected abstract void doCopyAreaEvent(Rectangle r, int dx, int dy);
 
 	@Override
 	public void clearRect(final int x, final int y, final int width,
 			final int height) {
 		ensureReady();
 		gfx.clearRect(x, y, width, height);
-		e(createClearRectEvent(new Rectangle(x, y, width, height)));
+		doClearRectEvent(new Rectangle(x, y, width, height));
 	}
 
 	@Override
@@ -179,42 +149,68 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 			final int height, final int dx, final int dy) {
 		ensureReady();
 		gfx.copyArea(x, y, width, height, dx, dy);
-		e(createCopyAreaEvent(new Rectangle(x, y, width, height), dx, dy));
+		doCopyAreaEvent(new Rectangle(x, y, width, height), dx, dy);
 	}
 
 	// drawing
 
-	protected abstract T createPathEvent(PathIterator path, boolean fill);
+	protected abstract void doPathEvent(PathIterator path);
+
+	private void paintShape(Shape s, final boolean fill) {
+		ensureReady();
+		switch (s.getPathIterator(null).getWindingRule()) {
+		case PathIterator.WIND_EVEN_ODD:
+			if (!fill) {
+				final GeneralPath gp = new GeneralPath(s);
+				gp.setWindingRule(PathIterator.WIND_NON_ZERO);
+				s = gp;
+				gfx.draw(s);
+			} else {
+				gfx.fill(s);
+			}
+			break;
+		case PathIterator.WIND_NON_ZERO:
+			if (fill) {
+				final GeneralPath gp = new GeneralPath(s);
+				gp.setWindingRule(PathIterator.WIND_EVEN_ODD);
+				s = gp;
+				gfx.draw(s);
+			} else {
+				gfx.draw(s);
+			}
+			break;
+		}
+		final Shape n = gfx.getStroke().createStrokedShape(s);
+		doPathEvent(n.getPathIterator(null));
+	}
 
 	@Override
 	public void draw(final Shape s) {
-		ensureReady();
-		final Shape n = gfx.getStroke().createStrokedShape(s);
-		gfx.draw(n);
-		e(createPathEvent(n.getPathIterator(null), false));
+		paintShape(s, false);
 	}
 
 	@Override
 	public void drawArc(final int x, final int y, final int width,
 			final int height, final int startAngle, final int arcAngle) {
-		draw(createArc(x, y, width, height, startAngle, arcAngle));
+		paintShape(createArc(x, y, width, height, startAngle, arcAngle), false);
 	}
 
 	@Override
 	public void drawLine(final int x1, final int y1, final int x2, final int y2) {
-		draw(new Line2D.Double(x1, y1, x2, y2));
+		paintShape(new Line2D.Double(x1, y1, x2, y2), false);
 	}
 
 	@Override
 	public void drawOval(final int x, final int y, final int width,
 			final int height) {
-		draw(createOval(x, y, width, height));
+		paintShape(createOval(x, y, width, height), false);
 	}
 
 	@Override
 	public void drawRoundRect(final int x, final int y, final int width,
 			final int height, final int arcWidth, final int arcHeight) {
-		draw(createRoundRect(x, y, width, height, arcWidth, arcHeight));
+		paintShape(createRoundRect(x, y, width, height, arcWidth, arcHeight),
+				false);
 	}
 
 	// polygons
@@ -238,19 +234,19 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public void drawPolygon(final int[] xPoints, final int[] yPoints,
 			final int nPoints) {
-		draw(createPolygon(xPoints, yPoints, nPoints, true));
+		paintShape(createPolygon(xPoints, yPoints, nPoints, true), false);
 	}
 
 	@Override
 	public void drawPolyline(final int[] xPoints, final int[] yPoints,
 			final int nPoints) {
-		draw(createPolygon(xPoints, yPoints, nPoints, false));
+		paintShape(createPolygon(xPoints, yPoints, nPoints, false), false);
 	}
 
 	@Override
 	public void fillPolygon(final int[] xPoints, final int[] yPoints,
 			final int nPoints) {
-		fill(createPolygon(xPoints, yPoints, nPoints, true));
+		paintShape(createPolygon(xPoints, yPoints, nPoints, true), true);
 	}
 
 	// strings
@@ -280,7 +276,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 		ensureReady();
 		final GlyphVector gv = gfx.getFont().createGlyphVector(
 				gfx.getFontRenderContext(), str);
-		fill(gv.getOutline(x, y));
+		paintShape(gv.getOutline(x, y), true);
 	}
 
 	@Override
@@ -291,7 +287,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public void drawGlyphVector(final GlyphVector g, final float x,
 			final float y) {
-		fill(g.getOutline(x, y));
+		paintShape(g.getOutline(x, y), true);
 	}
 
 	@Override
@@ -304,7 +300,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void setFont(final Font font) {
 		ensureReady();
 		gfx.setFont(font);
-		e(createChangeEvent(FONT));
+		doChangeEvent(FONT);
 	}
 
 	@Override
@@ -321,7 +317,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 
 	// images
 
-	protected abstract T createImageEvent(Image img);
+	protected abstract void doImageEvent(Image img, double x, double y);
 
 	@Override
 	public void drawImage(final BufferedImage img, final BufferedImageOp op,
@@ -367,11 +363,8 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public boolean drawImage(final Image img, final int x, final int y,
 			final ImageObserver observer) {
 		ensureReady();
-		final Graphics2D g = (Graphics2D) gfx.create();
-		g.translate(x, y);
-		final boolean b = g.drawImage(img, 0, 0, observer);
-		e(createImageEvent(img), g);
-		g.dispose();
+		final boolean b = gfx.drawImage(img, x, y, observer);
+		doImageEvent(img, x, y);
 		return b;
 	}
 
@@ -408,16 +401,13 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 
 	@Override
 	public void fill(final Shape s) {
-		ensureReady();
-		final Shape n = gfx.getStroke().createStrokedShape(s);
-		gfx.fill(n);
-		e(createPathEvent(n.getPathIterator(null), true));
+		paintShape(s, true);
 	}
 
 	@Override
 	public void fillArc(final int x, final int y, final int width,
 			final int height, final int startAngle, final int arcAngle) {
-		fill(createArc(x, y, width, height, startAngle, arcAngle));
+		paintShape(createArc(x, y, width, height, startAngle, arcAngle), true);
 	}
 
 	private Shape createArc(final double x, final double y, final double w,
@@ -464,19 +454,20 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public void fillOval(final int x, final int y, final int width,
 			final int height) {
-		fill(createOval(x, y, width, height));
+		paintShape(createOval(x, y, width, height), true);
 	}
 
 	@Override
 	public void fillRect(final int x, final int y, final int width,
 			final int height) {
-		fill(new Rectangle2D.Double(x, y, width, height));
+		paintShape(new Rectangle2D.Double(x, y, width, height), true);
 	}
 
 	@Override
 	public void fillRoundRect(final int x, final int y, final int width,
 			final int height, final int arcWidth, final int arcHeight) {
-		fill(createRoundRect(x, y, width, height, arcWidth, arcHeight));
+		paintShape(createRoundRect(x, y, width, height, arcWidth, arcHeight),
+				true);
 	}
 
 	// styles
@@ -521,28 +512,28 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void setBackground(final Color color) {
 		ensureReady();
 		gfx.setBackground(color);
-		e(createChangeEvent(BACKGROUND));
+		doChangeEvent(BACKGROUND);
 	}
 
 	@Override
 	public void setColor(final Color c) {
 		ensureReady();
 		gfx.setColor(c);
-		e(createChangeEvent(COLOR));
+		doChangeEvent(COLOR);
 	}
 
 	@Override
 	public void setComposite(final Composite comp) {
 		ensureReady();
 		gfx.setComposite(comp);
-		e(createChangeEvent(COMPOSITE));
+		doChangeEvent(COMPOSITE);
 	}
 
 	@Override
 	public void setPaint(final Paint paint) {
 		ensureReady();
 		gfx.setPaint(paint);
-		e(createChangeEvent(PAINT));
+		doChangeEvent(PAINT);
 	}
 
 	@Override
@@ -551,20 +542,20 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 		gfx.setStroke(s);
 	}
 
-	protected abstract T createModeEvent(Color xorColor);
+	protected abstract void doModeEvent(Color xorColor);
 
 	@Override
 	public void setPaintMode() {
 		ensureReady();
 		gfx.setPaintMode();
-		e(createModeEvent(null));
+		doModeEvent(null);
 	}
 
 	@Override
 	public void setXORMode(final Color c1) {
 		ensureReady();
 		gfx.setXORMode(c1);
-		e(createModeEvent(c1));
+		doModeEvent(c1);
 	}
 
 	// transformation
@@ -594,7 +585,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void setTransform(final AffineTransform Tx) {
 		ensureReady();
 		gfx.setTransform(Tx);
-		e(createChangeEvent(TRANSFORM));
+		doChangeEvent(TRANSFORM);
 	}
 
 	@Override
@@ -606,7 +597,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void transform(final AffineTransform Tx) {
 		ensureReady();
 		gfx.transform(Tx);
-		e(createChangeEvent(TRANSFORM));
+		doChangeEvent(TRANSFORM);
 	}
 
 	@Override
@@ -625,7 +616,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void addRenderingHints(final Map<?, ?> hints) {
 		ensureReady();
 		gfx.addRenderingHints(hints);
-		e(createChangeEvent(RENDERING_HINTS));
+		doChangeEvent(RENDERING_HINTS);
 	}
 
 	@Override
@@ -644,14 +635,14 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	public void setRenderingHint(final Key hintKey, final Object hintValue) {
 		ensureReady();
 		gfx.setRenderingHint(hintKey, hintValue);
-		e(createChangeEvent(RENDERING_HINTS));
+		doChangeEvent(RENDERING_HINTS);
 	}
 
 	@Override
 	public void setRenderingHints(final Map<?, ?> hints) {
 		ensureReady();
 		gfx.setRenderingHints(hints);
-		e(createChangeEvent(RENDERING_HINTS));
+		doChangeEvent(RENDERING_HINTS);
 	}
 
 	// maintenance
@@ -659,9 +650,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	@Override
 	public Graphics create() {
 		ensureReady();
-		final GFXEventReceiver<T> event = createReceiverEvent(-1, -1, true);
-		receiver.addEvent(event.getEvent());
-		return copy(event, this);
+		return copy(this);
 	}
 
 	private void ensureReady() {
@@ -671,7 +660,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 	}
 
 	public boolean isDisposed() {
-		return receiver == null;
+		return gfx == null;
 	}
 
 	@Override
@@ -680,7 +669,7 @@ public abstract class GFXGraphics<T extends GFXEvent> extends Graphics2D {
 			return;
 		}
 		gfx.dispose();
-		receiver = null;
+		gfx = null;
 	}
 
 }

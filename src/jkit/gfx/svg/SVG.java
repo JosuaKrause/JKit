@@ -4,10 +4,9 @@
 package jkit.gfx.svg;
 
 import java.awt.Graphics2D;
-import java.io.OutputStream;
+import java.io.Closeable;
+import java.io.IOException;
 
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import jkit.gfx.AbstractGfx;
@@ -17,36 +16,35 @@ import jkit.gfx.GFXGraphics;
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
-public class SVG extends AbstractGfx<SVGEvent> {
+public class SVG extends AbstractGfx implements Closeable {
 
-	public SVG(final int width, final int height) {
+	protected SVGWriter out;
+
+	public SVG(final XMLStreamWriter out, final int width, final int height) {
 		super(width, height);
+		this.out = new SVGWriter(out);
+		this.out.writeStart(width, height);
 	}
 
 	@Override
-	protected GFXGraphics<SVGEvent> createGraphics(final Graphics2D gfx,
-			final int width, final int height) {
-		return new SVGGraphics(gfx, width, height);
+	protected GFXGraphics createGraphics(final Graphics2D gfx) {
+		return new SVGGraphics(gfx, out);
 	}
 
-	public void write(final XMLStreamWriter out) throws XMLStreamException {
-		if (!graphics.isDisposed()) {
+	@Override
+	public void close() throws IOException {
+		if (out == null) {
+			return;
+		}
+		if (graphics != null && !graphics.isDisposed()) {
 			graphics.dispose();
 		}
-		event.getEvent().write(out);
-	}
-
-	private static final XMLOutputFactory FACTORY = XMLOutputFactory
-			.newInstance();
-
-	public static final String UTF8 = "UTF-8";
-
-	public void write(final OutputStream out) throws XMLStreamException {
-		final XMLStreamWriter w = FACTORY.createXMLStreamWriter(out, UTF8);
-		w.writeStartDocument(UTF8, "1.0");
-		write(w);
-		w.writeEndDocument();
-		w.close();
+		out.writeEnd();
+		if (out.hasException()) {
+			throw new IOException(out.getException());
+		}
+		out.close();
+		out = null;
 	}
 
 }

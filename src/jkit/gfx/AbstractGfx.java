@@ -10,30 +10,27 @@ import java.awt.image.BufferedImage;
 /**
  * @author Joschi <josua.krause@googlemail.com>
  * 
- * @param <T>
- *            The generic event receiver type.
  * 
  */
-public abstract class AbstractGfx<T extends GFXEvent> {
+public abstract class AbstractGfx {
 
 	protected final BufferedImage img;
 
-	protected final GFXGraphics<T> graphics;
-
-	protected final GFXEventReceiver<T> event;
+	protected GFXGraphics graphics;
 
 	public AbstractGfx(final int width, final int height) {
 		img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		graphics = createGraphics(img.createGraphics(), width, height);
-		event = graphics.getReceiver();
+		graphics = null;
 	}
 
-	protected abstract GFXGraphics<T> createGraphics(Graphics2D gfx, int width,
-			int height);
+	protected abstract GFXGraphics createGraphics(Graphics2D gfx);
 
 	public Graphics2D getGraphics() {
+		if (graphics == null) {
+			graphics = createGraphics(img.createGraphics());
+		}
 		if (graphics.isDisposed()) {
-			throw new IllegalStateException("graphics alread disposed");
+			throw new IllegalStateException("graphics already disposed");
 		}
 		return graphics;
 	}
