@@ -9,7 +9,10 @@ import static jkit.io.csv.CSVTest.EventType.END;
 import static jkit.io.csv.CSVTest.EventType.ROW;
 import static jkit.io.csv.CSVTest.EventType.START;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -302,4 +305,41 @@ public class CSVTest {
 		doTest(csv, strTest3, evTest3c);
 	}
 
+	@Test
+	public void test4() throws Exception {
+		final CSVReader csv = new CSVReader();
+		final String test = "abc;\";\";\"\"\"\"" + NL + "def;ghu;\"" + NL
+				+ "\";" + NL;
+		final StringWriter out = new StringWriter();
+		final CSVWriter cw = new CSVWriter(new PrintWriter(out));
+		csv.setHandler(new CSVAdapter() {
+
+			@Override
+			public void cell(final CSVContext ctx, final String content) {
+				cw.writeCell(content);
+			}
+
+			@Override
+			public void row(final CSVContext ctx) {
+				if (ctx.row() > 0) {
+					cw.writeRow();
+				}
+			}
+
+			@Override
+			public void end(final CSVContext ctx) {
+				try {
+					cw.close();
+				} catch (final IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+		});
+		csv.read(new StringReader(test));
+		if (!out.toString().equals(test)) {
+			throw new IllegalStateException("expected \"" + test + "\" got \""
+					+ out.toString() + "\"");
+		}
+	}
 }
