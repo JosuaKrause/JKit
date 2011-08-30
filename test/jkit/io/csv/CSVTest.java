@@ -35,20 +35,27 @@ public class CSVTest {
 
 		private final String col;
 
-		public Event(final EventType type) {
-			this(type, null);
+		private final int r;
+
+		private final int c;
+
+		public Event(final EventType type, final int r, final int c) {
+			this(type, r, c, null);
 		}
 
-		public Event(final EventType type, final String content) {
-			this(type, content, null, null);
+		public Event(final EventType type, final int r, final int c,
+				final String content) {
+			this(type, r, c, content, null, null);
 		}
 
-		public Event(final EventType type, final String content,
-				final String row, final String col) {
+		public Event(final EventType type, final int r, final int c,
+				final String content, final String row, final String col) {
 			this.type = type;
 			this.content = content;
 			this.row = row;
 			this.col = col;
+			this.r = r;
+			this.c = c;
 		}
 
 		@Override
@@ -66,6 +73,12 @@ public class CSVTest {
 			if (e.type != type) {
 				return false;
 			}
+			if (e.r != r) {
+				return false;
+			}
+			if (e.c != c) {
+				return false;
+			}
 			if (row != null && e.row != null && !row.equals(e.row)) {
 				return false;
 			}
@@ -80,13 +93,15 @@ public class CSVTest {
 
 		@Override
 		public int hashCode() {
-			return 31 * type.hashCode()
-					+ (content == null ? 1234 : content.hashCode());
+			return toString().hashCode();
 		}
 
 		@Override
 		public String toString() {
-			return type + (content != null ? "(\"" + content + "\")" : "");
+			return type + "[" + r + "," + c + "]"
+					+ (content != null ? "(\"" + content + "\")" : "")
+					+ (row != null ? "{r:" + row + "}" : "")
+					+ (col != null ? "{c:" + col + "}" : "");
 		}
 
 	}
@@ -121,32 +136,37 @@ public class CSVTest {
 
 		@Override
 		public void cell(final CSVContext ctx, final String content) {
-			events.add(new Event(CELL, content, ctx.rowName(), ctx.colName()));
+			events.add(new Event(CELL, ctx.row(), ctx.col(), content, ctx
+					.rowName(), ctx.colName()));
 		}
 
 		@Override
 		public void colTitle(final CSVContext ctx, final String title) {
-			events.add(new Event(COL, title, ctx.rowName(), ctx.colName()));
+			events.add(new Event(COL, ctx.row(), ctx.col(), title, ctx
+					.rowName(), ctx.colName()));
 		}
 
 		@Override
 		public void row(final CSVContext ctx) {
-			events.add(new Event(ROW, null, ctx.rowName(), ctx.colName()));
+			events.add(new Event(ROW, ctx.row(), ctx.col(), null,
+					ctx.rowName(), ctx.colName()));
 		}
 
 		@Override
 		public void rowTitle(final CSVContext ctx, final String title) {
-			events.add(new Event(ROW, title, ctx.rowName(), ctx.colName()));
+			events.add(new Event(ROW, ctx.row(), ctx.col(), title, ctx
+					.rowName(), ctx.colName()));
 		}
 
 		@Override
 		public void start(final CSVContext ctx) {
-			events.add(new Event(START, null, ctx.rowName(), ctx.colName()));
+			events.add(new Event(START, ctx.row(), ctx.col(), null, null, null));
 		}
 
 		@Override
 		public void end(final CSVContext ctx) {
-			events.add(new Event(END, null, ctx.rowName(), ctx.colName()));
+			events.add(new Event(END, -2, -2, null, ctx.rowName(), ctx
+					.colName()));
 		}
 
 	}
@@ -157,14 +177,16 @@ public class CSVTest {
 			+ "\"ab\"\"cd\";\"wu\r\nff\"\r\ngrr"
 			+ "rh;\"te;st\"\rblubb\nblubb;;";
 
-	private static final Event[] evTest0 = new Event[] { new Event(START),
-			new Event(ROW), new Event(CELL, "hallo"), new Event(CELL, "abc"),
-			new Event(CELL, " buh "), new Event(CELL, ""), new Event(ROW),
-			new Event(CELL, "bello"), new Event(CELL, ""),
-			new Event(CELL, "ab\"cd"), new Event(CELL, "wu" + NL + "ff"),
-			new Event(ROW), new Event(CELL, "grrrh"), new Event(CELL, "te;st"),
-			new Event(ROW), new Event(CELL, "blubbblubb"), new Event(CELL, ""),
-			new Event(END) };
+	private static final Event[] evTest0 = new Event[] {
+			new Event(START, 0, 0), new Event(ROW, 0, 0),
+			new Event(CELL, 0, 0, "hallo"), new Event(CELL, 0, 1, "abc"),
+			new Event(CELL, 0, 2, " buh "), new Event(CELL, 0, 3, ""),
+			new Event(ROW, 1, 0), new Event(CELL, 1, 0, "bello"),
+			new Event(CELL, 1, 1, ""), new Event(CELL, 1, 2, "ab\"cd"),
+			new Event(CELL, 1, 3, "wu" + NL + "ff"), new Event(ROW, 2, 0),
+			new Event(CELL, 2, 0, "grrrh"), new Event(CELL, 2, 1, "te;st"),
+			new Event(ROW, 3, 0), new Event(CELL, 3, 0, "blubbblubb"),
+			new Event(CELL, 3, 1, ""), new Event(END, -2, -2) };
 
 	private static final String strTest1r = "abc;def;ghi\rjkl;mno;pqr\rstu;vwx;yz_";
 
@@ -172,53 +194,77 @@ public class CSVTest {
 
 	private static final String strTest1n = "abc;def;ghi\njkl;mno;pqr\nstu;vwx;yz_\n";
 
-	private static final Event[] evTest1 = new Event[] { new Event(START),
-			new Event(ROW), new Event(CELL, "abc"), new Event(CELL, "def"),
-			new Event(CELL, "ghi"), new Event(ROW), new Event(CELL, "jkl"),
-			new Event(CELL, "mno"), new Event(CELL, "pqr"), new Event(ROW),
-			new Event(CELL, "stu"), new Event(CELL, "vwx"),
-			new Event(CELL, "yz_"), new Event(END) };
+	private static final Event[] evTest1 = new Event[] {
+			new Event(START, 0, 0), new Event(ROW, 0, 0),
+			new Event(CELL, 0, 0, "abc"), new Event(CELL, 0, 1, "def"),
+			new Event(CELL, 0, 2, "ghi"), new Event(ROW, 1, 0),
+			new Event(CELL, 1, 0, "jkl"), new Event(CELL, 1, 1, "mno"),
+			new Event(CELL, 1, 2, "pqr"), new Event(ROW, 2, 0),
+			new Event(CELL, 2, 0, "stu"), new Event(CELL, 2, 1, "vwx"),
+			new Event(CELL, 2, 2, "yz_"), new Event(END, -2, -2) };
 
 	private static final String strTest2 = "a\"b;c\"d;e\"f;\"gh\"";
 
+	private static final Event[] evTest2 = new Event[] {
+			new Event(START, 0, 0), new Event(ROW, 0, 0),
+			new Event(CELL, 0, 0, "a\"b"), new Event(CELL, 0, 1, "c\"d"),
+			new Event(CELL, 0, 2, "e\"f"), new Event(CELL, 0, 3, "gh"),
+			new Event(END, -2, -2) };
+
 	private static final String strTest3 = "-;c1;\"c2\";c3\nr1;1;2;3\n\"r2\";4;5;\"6\"\n\"r3\";7;8;9\n";
 
-	private static final Event[] evTest3r = new Event[] { new Event(START),
-			new Event(ROW, "-"), new Event(CELL, "c1"), new Event(CELL, "c2"),
-			new Event(CELL, "c3"), new Event(ROW, "r1"),
-			new Event(CELL, "1", "r1", null), new Event(CELL, "2", "r1", null),
-			new Event(CELL, "3", "r1", null), new Event(ROW, "r2"),
-			new Event(CELL, "4", "r2", null), new Event(CELL, "5", "r2", null),
-			new Event(CELL, "6", "r2", null), new Event(ROW, "r3"),
-			new Event(CELL, "7", "r3", null), new Event(CELL, "8", "r3", null),
-			new Event(CELL, "9", "r3", null), new Event(END) };
+	private static final Event[] evTest3r = new Event[] {
+			new Event(START, 0, -1), new Event(ROW, 0, -1, "-"),
+			new Event(ROW, 0, 0), new Event(CELL, 0, 0, "c1"),
+			new Event(CELL, 0, 1, "c2"), new Event(CELL, 0, 2, "c3"),
+			new Event(ROW, 1, -1, "r1"), new Event(ROW, 1, 0),
+			new Event(CELL, 1, 0, "1", "r1", null),
+			new Event(CELL, 1, 1, "2", "r1", null),
+			new Event(CELL, 1, 2, "3", "r1", null),
+			new Event(ROW, 2, -1, "r2"), new Event(ROW, 2, 0),
+			new Event(CELL, 2, 0, "4", "r2", null),
+			new Event(CELL, 2, 1, "5", "r2", null),
+			new Event(CELL, 2, 2, "6", "r2", null),
+			new Event(ROW, 3, -1, "r3"), new Event(ROW, 3, 0),
+			new Event(CELL, 3, 0, "7", "r3", null),
+			new Event(CELL, 3, 1, "8", "r3", null),
+			new Event(CELL, 3, 2, "9", "r3", null), new Event(END, -2, -2) };
 
-	private static final Event[] evTest3c = new Event[] { new Event(START),
-			new Event(COL, "-"), new Event(COL, "c1"), new Event(COL, "c2"),
-			new Event(COL, "c3"), new Event(ROW),
-			new Event(CELL, "r1", null, "c1"),
-			new Event(CELL, "1", null, "c2"), new Event(CELL, "2"),
-			new Event(CELL, "3", null, "c3"), new Event(ROW),
-			new Event(CELL, "r2", null, "c1"),
-			new Event(CELL, "4", null, "c2"), new Event(CELL, "5"),
-			new Event(CELL, "6", null, "c3"), new Event(ROW),
-			new Event(CELL, "r3", null, "c1"),
-			new Event(CELL, "7", null, "c2"), new Event(CELL, "8"),
-			new Event(CELL, "9", null, "c3"), new Event(END) };
+	private static final Event[] evTest3c = new Event[] {
+			new Event(START, -1, 0), new Event(COL, -1, 0, "-"),
+			new Event(COL, -1, 1, "c1"), new Event(COL, -1, 2, "c2"),
+			new Event(COL, -1, 3, "c3"), new Event(ROW, 0, 0),
+			new Event(CELL, 0, 0, "r1", null, "-"),
+			new Event(CELL, 0, 1, "1", null, "c1"),
+			new Event(CELL, 0, 2, "2", null, "c2"),
+			new Event(CELL, 0, 3, "3", null, "c3"), new Event(ROW, 1, 0),
+			new Event(CELL, 1, 0, "r2", null, "-"),
+			new Event(CELL, 1, 1, "4", null, "c1"),
+			new Event(CELL, 1, 2, "5", null, "c2"),
+			new Event(CELL, 1, 3, "6", null, "c3"), new Event(ROW, 2, 0),
+			new Event(CELL, 2, 0, "r3", null, "-"),
+			new Event(CELL, 2, 1, "7", null, "c1"),
+			new Event(CELL, 2, 2, "8", null, "c2"),
+			new Event(CELL, 2, 3, "9", null, "c3"), new Event(END, -2, -2) };
 
-	private static final Event[] evTest3rc = new Event[] { new Event(START),
-			new Event(COL, "c1"), new Event(COL, "c2"), new Event(COL, "c3"),
-			new Event(ROW, "r1"), new Event(CELL, "1", "r1", "c1"),
-			new Event(CELL, "2", "r1", "c2"), new Event(CELL, "3", "r2", "c3"),
-			new Event(ROW, "r2"), new Event(CELL, "4", "r2", "c1"),
-			new Event(CELL, "5", "r2", "c2"), new Event(CELL, "6", "r2", "c3"),
-			new Event(ROW, "r3"), new Event(CELL, "7", "r3", "c1"),
-			new Event(CELL, "8", "r3", "c2"), new Event(CELL, "9", "r3", "c3"),
-			new Event(END) };
-
-	private static final Event[] evTest2 = new Event[] { new Event(START),
-			new Event(ROW), new Event(CELL, "a\"b"), new Event(CELL, "c\"d"),
-			new Event(CELL, "e\"f"), new Event(CELL, "gh"), new Event(END) };
+	private static final Event[] evTest3rc = new Event[] {
+			new Event(START, -1, -1), new Event(COL, -1, 0, "c1"),
+			new Event(COL, -1, 1, "c2"), new Event(COL, -1, 2, "c3"),
+			new Event(ROW, 0, -1, "r1"),
+			new Event(ROW, 0, 0, null, "r1", null),
+			new Event(CELL, 0, 0, "1", "r1", "c1"),
+			new Event(CELL, 0, 1, "2", "r1", "c2"),
+			new Event(CELL, 0, 2, "3", "r1", "c3"),
+			new Event(ROW, 1, -1, "r2"),
+			new Event(ROW, 1, 0, null, "r2", null),
+			new Event(CELL, 1, 0, "4", "r2", "c1"),
+			new Event(CELL, 1, 1, "5", "r2", "c2"),
+			new Event(CELL, 1, 2, "6", "r2", "c3"),
+			new Event(ROW, 2, -1, "r3"),
+			new Event(ROW, 2, 0, null, "r3", null),
+			new Event(CELL, 2, 0, "7", "r3", "c1"),
+			new Event(CELL, 2, 1, "8", "r3", "c2"),
+			new Event(CELL, 2, 2, "9", "r3", "c3"), new Event(END, -2, -2) };
 
 	private void doTest(final CSVReader reader, final String in,
 			final Event[] valid) throws Exception {
@@ -245,6 +291,7 @@ public class CSVTest {
 		doTest(new CSVReader(), strTest2, evTest2);
 	}
 
+	@Test
 	public void test3() throws Exception {
 		final CSVReader csv = new CSVReader();
 		csv.setReadRowTitles(true);

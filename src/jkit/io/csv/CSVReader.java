@@ -32,8 +32,8 @@ public class CSVReader {
 			this.hasRowNames = hasRowNames;
 			colNames = hasColNames ? new LinkedList<String>() : null;
 			rowName = null;
-			row = hasRowNames ? -1 : 0;
-			col = hasColNames ? -1 : 0;
+			row = hasColNames ? -1 : 0;
+			col = hasRowNames ? -1 : 0;
 		}
 
 		public void addColName(final String name) {
@@ -60,6 +60,9 @@ public class CSVReader {
 
 		@Override
 		public String colName() {
+			if (col < 0) {
+				return null;
+			}
 			return colNames != null ? colNames.get(col) : "" + col;
 		}
 
@@ -171,6 +174,7 @@ public class CSVReader {
 				} else {
 					handle(hnd, current.toString(), ctx);
 					line(ctx);
+					canString = true;
 					current = null;
 				}
 				afterLn = true;
@@ -188,23 +192,27 @@ public class CSVReader {
 			final Context ctx) {
 		switch (ctx.col()) {
 		case -1:
+			if (ctx.row() < 0) {
+				break;
+			}
 			ctx.setRowName(content);
 			hnd.rowTitle(ctx, content);
 			break;
 		case 0:
-			hnd.row(ctx);
+			if (ctx.row() >= 0) {
+				hnd.row(ctx);
+			}
 			// no break
-		default: {
+		default:
 			if (ctx.row() < 0) {
 				ctx.addColName(content);
 				hnd.colTitle(ctx, content);
 				break;
 			}
 			hnd.cell(ctx, content);
-			ctx.nextCell();
 			break;
 		}
-		}
+		ctx.nextCell();
 	}
 
 	private void line(final Context ctx) {
