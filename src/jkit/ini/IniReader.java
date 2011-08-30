@@ -709,6 +709,32 @@ public class IniReader {
 		return !res.isEmpty();
 	}
 
+	private <T> T getInstance0(final Class<T> loadedType) {
+		try {
+			return loadedType.newInstance();
+		} catch (final Exception e) {
+			return null;
+		}
+	}
+
+	public <T> T getInstance(final String area, final String name,
+			final Class<T> superType) {
+		return getInstance0(getObject(area, name, new ClassConverter<T>(
+				superType)));
+	}
+
+	public <T> T getInstance(final String area, final String name,
+			final Class<T> superType, final String defaultValue) {
+		return getInstance0(getObject(area, name, new ClassConverter<T>(
+				superType), defaultValue));
+	}
+
+	public <T> T getInstance(final String area, final String name,
+			final Class<T> superType, final Class<T> defaultClass) {
+		return getInstance0(getObject(area, name, new ClassConverter<T>(
+				superType), defaultClass));
+	}
+
 	/**
 	 * Converts the String content of the field in an Object.
 	 * 
