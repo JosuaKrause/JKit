@@ -1,4 +1,4 @@
-package jkit.ini;
+package jkit.io.ini;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import jkit.io.convert.ArrayConverter;
+import jkit.io.convert.Converter;
 
 /**
  * Reads out an INI file and presents its information as a simple name value
