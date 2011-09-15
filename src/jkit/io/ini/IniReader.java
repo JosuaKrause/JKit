@@ -13,6 +13,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import jkit.io.convert.ArrayConverter;
+import jkit.io.convert.ClassConverter;
 import jkit.io.convert.Converter;
 
 /**
@@ -28,6 +29,8 @@ public class IniReader {
 	 * The name of the utf8 charset.
 	 */
 	public static final String UTF8_STR = "UTF-8";
+
+	public static final String NULL = "null";
 
 	/**
 	 * The name of an entry.
@@ -715,6 +718,7 @@ public class IniReader {
 	private <T> T getInstance0(final Class<T> loadedType) {
 		try {
 			return loadedType.newInstance();
+			// catch null pointer, visibility and no such method exception
 		} catch (final Exception e) {
 			return null;
 		}
@@ -738,6 +742,24 @@ public class IniReader {
 				superType), defaultClass));
 	}
 
+	private static final class Result<T> {
+
+		public final T obj;
+
+		public final boolean valid;
+
+		public Result(final T obj) {
+			this.obj = obj;
+			this.valid = true;
+		}
+
+		public Result() {
+			obj = null;
+			valid = false;
+		}
+
+	}
+
 	/**
 	 * Converts the String content of the field in an Object.
 	 * 
@@ -756,7 +778,7 @@ public class IniReader {
 	 */
 	public <T> T getObject(final String area, final String name,
 			final Converter<T> converter) {
-		return getObject0(area, name, converter);
+		return getObject0(area, name, converter).obj;
 	}
 
 	/**
@@ -779,11 +801,12 @@ public class IniReader {
 	 */
 	public <T> T getObject(final String area, final String name,
 			final Converter<T> converter, final String defaultValue) {
-		final T res = getObject(area, name, converter);
-		if (autoLearn && res == null) {
+		final Result<T> res = getObject0(area, name, converter);
+		if (autoLearn && !res.valid) {
 			setObject(area, name, defaultValue);
 		}
-		return res != null ? res : converter.convert(defaultValue);
+		return res.valid ? res.obj : (NULL.equals(defaultValue) ? null
+				: converter.convert(defaultValue));
 	}
 
 	/**
@@ -806,21 +829,25 @@ public class IniReader {
 	 */
 	public <T> T getObject(final String area, final String name,
 			final Converter<T> converter, final T defaultValue) {
-		final T res = getObject(area, name, converter);
-		if (autoLearn && res == null) {
+		final Result<T> res = getObject0(area, name, converter);
+		if (autoLearn && !res.valid) {
 			setObject(area, name, defaultValue);
 		}
-		return res != null ? res : defaultValue;
+		return res.valid ? res.obj : defaultValue;
 	}
 
 	/* The object worm hole */
-	private <T> T getObject0(final String area, final String name,
+	private <T> Result<T> getObject0(final String area, final String name,
 			final Converter<T> converter) {
 		if (!has(area, name)) {
-			return null;
+			return new Result<T>();
 		}
 		final String str = get(area, name);
-		return converter.convert(str);
+		if (NULL.equals(str)) {
+			return new Result<T>(null);
+		}
+		final T res = converter.convert(str);
+		return res != null ? new Result<T>(res) : new Result<T>();
 	}
 
 	/**
@@ -841,7 +868,7 @@ public class IniReader {
 	 */
 	public <T> boolean hasObject(final String area, final String name,
 			final Converter<T> converter) {
-		return getObject0(area, name, converter) != null;
+		return getObject0(area, name, converter).valid;
 	}
 
 	/**
