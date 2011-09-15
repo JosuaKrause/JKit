@@ -1,4 +1,4 @@
-package jkit.ini;
+package jkit.io.ini;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import jkit.io.convert.ArrayConverter;
+import jkit.io.convert.Converter;
 
 /**
  * Reads out an INI file and presents its information as a simple name value
@@ -707,6 +710,32 @@ public class IniReader {
 			setBoolean(area, name, false);
 		}
 		return !res.isEmpty();
+	}
+
+	private <T> T getInstance0(final Class<T> loadedType) {
+		try {
+			return loadedType.newInstance();
+		} catch (final Exception e) {
+			return null;
+		}
+	}
+
+	public <T> T getInstance(final String area, final String name,
+			final Class<T> superType) {
+		return getInstance0(getObject(area, name, new ClassConverter<T>(
+				superType)));
+	}
+
+	public <T> T getInstance(final String area, final String name,
+			final Class<T> superType, final String defaultValue) {
+		return getInstance0(getObject(area, name, new ClassConverter<T>(
+				superType), defaultValue));
+	}
+
+	public <T> T getInstance(final String area, final String name,
+			final Class<T> superType, final Class<T> defaultClass) {
+		return getInstance0(getObject(area, name, new ClassConverter<T>(
+				superType), defaultClass));
 	}
 
 	/**
