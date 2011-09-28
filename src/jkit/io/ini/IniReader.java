@@ -715,7 +715,7 @@ public class IniReader {
 		return !res.isEmpty();
 	}
 
-	private <T> T getInstance0(final Class<T> loadedType) {
+	private static <T> T getInstance0(final Class<T> loadedType) {
 		try {
 			return loadedType.newInstance();
 			// catch null pointer, visibility and no such method exception
@@ -1099,7 +1099,7 @@ public class IniReader {
 	}
 
 	/* uncomments a line and trims its endings */
-	private String uncommentAndTrim(final String line) {
+	private static String uncommentAndTrim(final String line) {
 		int cur = 0;
 		while (cur < line.length()) {
 			final int pos = line.indexOf('#', cur);

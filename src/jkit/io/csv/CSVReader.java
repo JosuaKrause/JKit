@@ -188,7 +188,7 @@ public class CSVReader {
 		hnd.end(ctx);
 	}
 
-	private void handle(final CSVHandler hnd, final String content,
+	private static void handle(final CSVHandler hnd, final String content,
 			final Context ctx) {
 		switch (ctx.col()) {
 		case -1:
@@ -215,7 +215,7 @@ public class CSVReader {
 		ctx.nextCell();
 	}
 
-	private void line(final Context ctx) {
+	private static void line(final Context ctx) {
 		ctx.nextRow();
 	}
 

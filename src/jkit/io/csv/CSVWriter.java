@@ -39,7 +39,7 @@ public class CSVWriter implements Closeable {
 		out.print(sanitize(content));
 	}
 
-	private boolean hasChars(final String haystack, final String chars) {
+	private static boolean hasChars(final String haystack, final String chars) {
 		for (int i = 0; i < chars.length(); ++i) {
 			if (haystack.indexOf(chars.charAt(i)) >= 0) {
 				return true;
