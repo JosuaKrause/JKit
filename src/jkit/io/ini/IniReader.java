@@ -224,7 +224,16 @@ public class IniReader {
 		if (name.contains("=")) {
 			throw new IllegalArgumentException("invalid name: " + name);
 		}
-		entries.put(new Entry(area.trim(), name.trim()), value.trim());
+		final Entry entry = new Entry(area.trim(), name.trim());
+		final String v = value.trim();
+		if (entries.containsKey(entry)) {
+			final String old = entries.get(entry);
+			if (v.equals(old)) {
+				return;
+			}
+		}
+		entries.put(entry, v);
+		hasChanged = true;
 	}
 
 	/**
@@ -1029,6 +1038,9 @@ public class IniReader {
 	/* whether to automatically learn from default values */
 	private boolean autoLearn;
 
+	/* whether the content has changed after loading from the disk */
+	private boolean hasChanged;
+
 	/* the associated file */
 	private File file;
 
@@ -1045,6 +1057,7 @@ public class IniReader {
 		scanner = s;
 		area = "";
 		file = null;
+		hasChanged = false;
 	}
 
 	/* private default constructor */
@@ -1054,6 +1067,11 @@ public class IniReader {
 		scanner = null;
 		area = null;
 		file = null;
+		hasChanged = false;
+	}
+
+	public boolean hasChanged() {
+		return hasChanged;
 	}
 
 	/**
