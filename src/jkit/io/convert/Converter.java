@@ -12,28 +12,28 @@ import java.io.File;
  */
 public interface Converter<T> {
 
-	/**
-	 * Converts the String into the object. Note that the objects
-	 * {@link Object#toString() toString()} method must return the exact same
-	 * String.
-	 * 
-	 * @param s
-	 *            The String.
-	 * @return The converted object or <code>null</code> if the String could not
-	 *         be converted.
-	 */
-	T convert(String s);
+    /**
+     * Converts the String into the object. Note that the objects
+     * {@link Object#toString() toString()} method must return the exact same
+     * String.
+     * 
+     * @param s
+     *            The String.
+     * @return The converted object or <code>null</code> if the String could not
+     *         be converted.
+     */
+    T convert(String s);
 
-	/**
-	 * A converter for filenames.
-	 */
-	static Converter<File> fileConverter = new Converter<File>() {
+    /**
+     * A converter for filenames.
+     */
+    static Converter<File> fileConverter = new Converter<File>() {
 
-		@Override
-		public File convert(final String s) {
-			return new File(s);
-		}
+        @Override
+        public File convert(final String s) {
+            return new File(s);
+        }
 
-	};
+    };
 
 }
