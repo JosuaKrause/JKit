@@ -9,14 +9,14 @@ package jkit.io.csv;
  */
 public interface CSVContext {
 
-	CSVReader reader();
+    CSVReader reader();
 
-	String colName();
+    String colName();
 
-	String rowName();
+    String rowName();
 
-	int row();
+    int row();
 
-	int col();
+    int col();
 
 }

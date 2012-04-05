@@ -9,16 +9,16 @@ package jkit.io.csv;
  */
 public interface CSVHandler {
 
-	void start(CSVContext ctx);
+    void start(CSVContext ctx);
 
-	void colTitle(CSVContext ctx, String title);
+    void colTitle(CSVContext ctx, String title);
 
-	void rowTitle(CSVContext ctx, String title);
+    void rowTitle(CSVContext ctx, String title);
 
-	void cell(CSVContext ctx, String content);
+    void cell(CSVContext ctx, String content);
 
-	void row(CSVContext ctx);
+    void row(CSVContext ctx);
 
-	void end(CSVContext ctx);
+    void end(CSVContext ctx);
 
 }

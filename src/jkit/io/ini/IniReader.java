@@ -23,13 +23,19 @@ import jkit.io.convert.Converter;
  * @author Joschi <josua.krause@googlemail.com>
  * 
  */
-public class IniReader {
+public final class IniReader {
 
     /**
      * The name of the utf8 charset.
      */
     public static final String UTF8_STR = "UTF-8";
 
+    /**
+     * The string that is interpreted by any
+     * {@link #getObject(String, String, Converter)} or
+     * {@link #getInstance(String, String, Class)} method to return a
+     * <code>null</code> pointer.
+     */
     public static final String NULL = "null";
 
     /**
@@ -39,10 +45,10 @@ public class IniReader {
      * 
      */
     private static class Entry {
-        /* the area name */
+        /** The area name. */
         final String area;
 
-        /* the actual name */
+        /** The actual name. */
         final String name;
 
         /**
@@ -77,6 +83,7 @@ public class IniReader {
         public int hashCode() {
             return area.hashCode() * 31 + name.hashCode();
         }
+
     }
 
     /**
@@ -144,12 +151,12 @@ public class IniReader {
      * 
      * @see #writeIni(PrintWriter)
      */
-    public void writeIni() throws IllegalStateException, IOException {
-        final File file = this.file;
-        if (file == null) {
+    public void writeIni() throws IOException {
+        final File f = file;
+        if (f == null) {
             throw new IllegalStateException("no associated file");
         }
-        final PrintWriter pw = new PrintWriter(file, UTF8_STR);
+        final PrintWriter pw = new PrintWriter(f, UTF8_STR);
         writeIni(pw);
         pw.close();
     }
@@ -164,7 +171,8 @@ public class IniReader {
      */
     public void writeIni(final PrintWriter pw) {
         parse();
-        final Comparator<Entry> cmp = new Comparator<Entry>() {
+        final Comparator<Entry> comp = new Comparator<Entry>() {
+
             @Override
             public int compare(final Entry o1, final Entry o2) {
                 final int cmp = o1.area.compareTo(o2.area);
@@ -173,24 +181,27 @@ public class IniReader {
                 }
                 return o1.name.compareTo(o2.name);
             }
+
         };
         // gather areas
         final Map<Entry, String> map = entries;
         final Map<String, SortedSet<Entry>> areas = new HashMap<String, SortedSet<Entry>>();
         for (final Entry e : map.keySet()) {
-            final String area = e.area;
-            if (!areas.containsKey(area)) {
-                areas.put(area, new TreeSet<Entry>(cmp));
+            final String areaString = e.area;
+            if (!areas.containsKey(areaString)) {
+                areas.put(areaString, new TreeSet<Entry>(comp));
             }
-            areas.get(area).add(e);
+            areas.get(areaString).add(e);
         }
         // write output
         final Object[] objAreas = areas.keySet().toArray();
         Arrays.sort(objAreas);
-        for (final Object area : objAreas) {
+        for (final Object areaObj : objAreas) {
+            pw.print("[");
             // relying on the toString() method of String
-            pw.println("[" + area + "]");
-            for (final Entry e : areas.get(area)) {
+            pw.print(areaObj);
+            pw.println("]");
+            for (final Entry e : areas.get(areaObj)) {
                 pw.print(e.name);
                 pw.print('=');
                 String line = map.get(e);
@@ -433,6 +444,8 @@ public class IniReader {
     }
 
     /**
+     * Checks if the field has an associated value.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -445,6 +458,8 @@ public class IniReader {
     }
 
     /**
+     * Checks if the field has a numerical value.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -459,7 +474,15 @@ public class IniReader {
         return i != null;
     }
 
-    /* the integer wormhole */
+    /**
+     * The integer wormhole.
+     * 
+     * @param area
+     *            The area name.
+     * @param name
+     *            The actual name of the value.
+     * @return The integer or <code>null</code> if the field has no integer.
+     */
     private Integer getInteger0(final String area, final String name) {
         final String res = get(area, name);
         Integer i = null;
@@ -472,6 +495,8 @@ public class IniReader {
     }
 
     /**
+     * Gets the numerical interpretation of the field.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -505,6 +530,8 @@ public class IniReader {
     }
 
     /**
+     * Checks if the field has a numerical value.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -519,7 +546,15 @@ public class IniReader {
         return l != null;
     }
 
-    /* the long wormhole */
+    /**
+     * The long wormhole.
+     * 
+     * @param area
+     *            The area name.
+     * @param name
+     *            The actual name of the value.
+     * @return The long or <code>null</code> if the field has no long.
+     */
     private Long getLong0(final String area, final String name) {
         final String res = get(area, name);
         Long l = null;
@@ -532,6 +567,8 @@ public class IniReader {
     }
 
     /**
+     * Gets the numerical interpretation of the field.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -566,6 +603,8 @@ public class IniReader {
     }
 
     /**
+     * Checks if the field has a float value.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -580,7 +619,16 @@ public class IniReader {
         return f != null;
     }
 
-    /* the float wormhole */
+    /**
+     * The float wormhole.
+     * 
+     * @param area
+     *            The area name.
+     * @param name
+     *            The actual name of the value.
+     * @return The float value or <code>null</code> if the field can not be
+     *         interpreted as float.
+     */
     private Float getFloat0(final String area, final String name) {
         final String res = get(area, name);
         Float f = null;
@@ -593,6 +641,8 @@ public class IniReader {
     }
 
     /**
+     * Gets the float interpretation of the field.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -626,6 +676,8 @@ public class IniReader {
     }
 
     /**
+     * Checks if the field can be interpreted as double.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -640,7 +692,16 @@ public class IniReader {
         return d != null;
     }
 
-    /* the double wormhole */
+    /**
+     * The double wormhole.
+     * 
+     * @param area
+     *            The area name.
+     * @param name
+     *            The actual name of the value.
+     * @return The double value or <code>null</code> if the field can not be
+     *         interpreted as double value.
+     */
     private Double getDouble0(final String area, final String name) {
         final String res = get(area, name);
         Double d = null;
@@ -653,6 +714,8 @@ public class IniReader {
     }
 
     /**
+     * Gets the double interpretation of the field.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -686,6 +749,8 @@ public class IniReader {
     }
 
     /**
+     * Gets the boolean interpretation of the field.
+     * 
      * @param area
      *            The area name. The name in [box brackets].
      * @param name
@@ -715,6 +780,22 @@ public class IniReader {
         return !res.isEmpty();
     }
 
+    /**
+     * Instantiates the given class.
+     * 
+     * @param <T>
+     *            The type of the class.
+     * @param loadedType
+     *            The class to instantiate.
+     * @return An object of type <code>&lt;T&gt;</code> created by the default
+     *         constructor or <code>null</code>. <code>null</code> is returned
+     *         when
+     *         <ul>
+     *         <li>the default constructor does not exist
+     *         <li>the default constructor is not visible
+     *         <li>the class object itself is <code>null</code>
+     *         </ul>
+     */
     private static <T> T getInstance0(final Class<T> loadedType) {
         try {
             return loadedType.newInstance();
@@ -724,35 +805,136 @@ public class IniReader {
         }
     }
 
+    /**
+     * Interprets the field as class and returns an instantiation of the class.
+     * 
+     * @param <T>
+     *            The type of the object that is returned.
+     * @param area
+     *            The name of the area.
+     * @param name
+     *            The name of the actual value.
+     * @param superType
+     *            The super class of the returned object, i.e. the type
+     *            <code>&lt;T&gt;</code>.
+     * @return An object of type <code>&lt;T&gt;</code> created by the default
+     *         constructor or <code>null</code>. <code>null</code> is returned
+     *         when
+     *         <ul>
+     *         <li>the default constructor does not exist
+     *         <li>the default constructor is not visible
+     *         <li>the class object itself is <code>null</code>
+     *         <li>the object can not be cast to the type <code>&lt;T&gt;</code>
+     *         </ul>
+     */
     public <T> T getInstance(final String area, final String name,
             final Class<T> superType) {
         return getInstance0(getObject(area, name, new ClassConverter<T>(
                 superType)));
     }
 
+    /**
+     * Interprets the field as class and returns an instantiation of the class.
+     * 
+     * @param <T>
+     *            The type of the object that is returned.
+     * @param area
+     *            The name of the area.
+     * @param name
+     *            The name of the actual value.
+     * @param superType
+     *            The super class of the returned object, i.e. the type
+     *            <code>&lt;T&gt;</code>.
+     * @param defaultValue
+     *            The default class name that should be loaded if the field can
+     *            not be interpreted as class name. Note that the method still
+     *            can fail with a <code>null</code> value as stated below.
+     * @return An object of type <code>&lt;T&gt;</code> created by the default
+     *         constructor or <code>null</code>. <code>null</code> is returned
+     *         when
+     *         <ul>
+     *         <li>the default constructor does not exist
+     *         <li>the default constructor is not visible
+     *         <li>the class object itself is <code>null</code>
+     *         <li>the object can not be cast to the type <code>&lt;T&gt;</code>
+     *         </ul>
+     */
     public <T> T getInstance(final String area, final String name,
             final Class<T> superType, final String defaultValue) {
         return getInstance0(getObject(area, name, new ClassConverter<T>(
                 superType), defaultValue));
     }
 
+    /**
+     * Interprets the field as class and returns an instantiation of the class.
+     * 
+     * @param <T>
+     *            The type of the object that is returned.
+     * @param area
+     *            The name of the area.
+     * @param name
+     *            The name of the actual value.
+     * @param superType
+     *            The super class of the returned object, i.e. the type
+     *            <code>&lt;T&gt;</code>.
+     * @param defaultClass
+     *            The default class that should be loaded if the field can not
+     *            be interpreted as class name. Note that the method still can
+     *            fail with a <code>null</code> value as stated below. As
+     *            opposed to {@link #getInstance(String, String, Class, String)}
+     *            the default class file is always loaded - even when no
+     *            instance is created.
+     * @return An object of type <code>&lt;T&gt;</code> created by the default
+     *         constructor or <code>null</code>. <code>null</code> is returned
+     *         when
+     *         <ul>
+     *         <li>the default constructor does not exist
+     *         <li>the default constructor is not visible
+     *         <li>the class object itself is <code>null</code>
+     *         <li>the object can not be cast to the type <code>&lt;T&gt;</code>
+     *         </ul>
+     */
     public <T> T getInstance(final String area, final String name,
             final Class<T> superType, final Class<T> defaultClass) {
         return getInstance0(getObject(area, name, new ClassConverter<T>(
                 superType), defaultClass));
     }
 
+    /**
+     * A result for a field query. With this thin wrapper a <code>null</code>
+     * value of the field can be distinguished with being a valid return value
+     * or an error.
+     * 
+     * @author Joschi <josua.krause@googlemail.com>
+     * @param <T>
+     *            The type of the result.
+     */
     private static final class Result<T> {
 
+        /**
+         * The object that may be <code>null</code>.
+         */
         public final T obj;
 
+        /**
+         * Whether the value in {@link #obj} is a valid return value.
+         */
         public final boolean valid;
 
+        /**
+         * Defines the result as valid value.
+         * 
+         * @param obj
+         *            The valid value that may be <code>null</code>.
+         */
         public Result(final T obj) {
             this.obj = obj;
             this.valid = true;
         }
 
+        /**
+         * Defines the result invalid.
+         */
         public Result() {
             obj = null;
             valid = false;
@@ -836,7 +1018,19 @@ public class IniReader {
         return res.valid ? res.obj : defaultValue;
     }
 
-    /* The object worm hole */
+    /**
+     * The object worm hole.
+     * 
+     * @param area
+     *            The area name.
+     * @param name
+     *            The actual name.
+     * @param converter
+     *            The converter to convert the result.
+     * @param <T>
+     *            The type of the result.
+     * @return A result indicating if the returned value is valid.
+     */
     private <T> Result<T> getObject0(final String area, final String name,
             final Converter<T> converter) {
         if (!has(area, name)) {
@@ -906,7 +1100,21 @@ public class IniReader {
         return res;
     }
 
-    // if the error could not be converted
+    /**
+     * This method is called if a field can not be converted into an array. This
+     * happens either when the field is empty or when the converter fails to
+     * convert an element in the array.
+     * 
+     * @param <T>
+     *            The type of the array.
+     * @param area
+     *            The name of the area.
+     * @param name
+     *            The name of the value.
+     * @param converter
+     *            The converter to convert the array elements.
+     * @return The resulting array, i.e. the default value of the converter.
+     */
     private <T> T[] malformedArray(final String area, final String name,
             final ArrayConverter<T> converter) {
         final T[] defaultValue = converter.defaultValue();
@@ -1023,22 +1231,27 @@ public class IniReader {
         return getArray(area, name, EMPTY_ARR);
     }
 
-    /* the map of the entries */
+    /** The map of the entries. */
     private final Map<Entry, String> entries;
 
-    /* whether to automatically learn from default values */
+    /** Whether to automatically learn from default values. */
     private boolean autoLearn;
 
-    /* the associated file */
+    /** The associated file. */
     private File file;
 
-    /* the INI scanner */
+    /** The INI scanner. */
     private Scanner scanner;
 
-    /* the current area or null if finished scanning */
+    /** The current area or null if finished scanning. */
     private String area;
 
-    /* private constructor */
+    /**
+     * Private constructor.
+     * 
+     * @param s
+     *            The underlying scanner.
+     */
     private IniReader(final Scanner s) {
         entries = new HashMap<Entry, String>();
         autoLearn = false;
@@ -1047,7 +1260,9 @@ public class IniReader {
         file = null;
     }
 
-    /* private default constructor */
+    /**
+     * Private default constructor. No scanner is defined.
+     */
     private IniReader() {
         entries = new HashMap<Entry, String>();
         autoLearn = false;
@@ -1057,18 +1272,19 @@ public class IniReader {
     }
 
     /**
+     * Setter.
+     * 
      * @param autoLearn
      *            Whether the IniReader should learn from default values. This
      *            option can be hazardous regarding fields that are interpreted
      *            in multiple ways.
-     * 
      *            <p>
      *            <code>
-     * 				IniReader ini = IniReader.createIniReader();<br />
-     * 				ini.set("foo", "bar", "baz");<br />
-     * 				ini.getLong("foo", "bar", 15);<br />
-     * 				ini.get("foo", "bar"); // returns 15 instead of "baz"!<br />
-     * 			  </code>
+     * IniReader ini = IniReader.createIniReader();<br />
+     * ini.set("foo", "bar", "baz");<br />
+     * ini.getLong("foo", "bar", 15);<br />
+     * ini.get("foo", "bar"); // returns 15 instead of "baz"!<br />
+     * </code>
      *            </p>
      */
     public void setAutoLearn(final boolean autoLearn) {
@@ -1085,7 +1301,7 @@ public class IniReader {
         this.file = file;
     }
 
-    /* parses the input file */
+    /** Parses the input file. */
     private void parse() {
         if (scanner == null) {
             return;
@@ -1098,7 +1314,13 @@ public class IniReader {
         area = null;
     }
 
-    /* uncomments a line and trims its endings */
+    /**
+     * Uncomments a line and trims its endings.
+     * 
+     * @param line
+     *            The line to interpret.
+     * @return The line without comments or trailing spaces.
+     */
     private static String uncommentAndTrim(final String line) {
         int cur = 0;
         while (cur < line.length()) {
@@ -1115,9 +1337,14 @@ public class IniReader {
         return line;
     }
 
-    /* interprets a line */
-    private void interpret(String line) {
-        line = uncommentAndTrim(line).replace("##", "#");
+    /**
+     * Interprets a line.
+     * 
+     * @param l
+     *            The line to interpret.
+     */
+    private void interpret(final String l) {
+        final String line = uncommentAndTrim(l).replace("##", "#");
         if (line.startsWith("[")) {
             final int end = line.indexOf(']');
             if (end < 0) {
