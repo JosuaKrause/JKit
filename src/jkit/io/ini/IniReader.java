@@ -1246,7 +1246,7 @@ public final class IniReader {
     /** Whether to automatically learn from default values. */
     private boolean autoLearn;
 
-    /* whether the content has changed after loading from the disk */
+    /** Whether the content has changed after loading from the disk. */
     private boolean hasChanged;
 
     /** The associated file. */
