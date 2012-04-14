@@ -4,19 +4,45 @@
 package jkit.io.csv;
 
 /**
- * @author Joschi <josua.krause@googlemail.com>
+ * The context of an csv event.
  * 
+ * @author Joschi <josua.krause@googlemail.com>
  */
 public interface CSVContext {
 
-    CSVReader reader();
+  /**
+   * Getter.
+   * 
+   * @return The csv reader.
+   */
+  CSVReader reader();
 
-    String colName();
+  /**
+   * Getter.
+   * 
+   * @return The name of the current column.
+   */
+  String colName();
 
-    String rowName();
+  /**
+   * Getter.
+   * 
+   * @return The name of the current row.
+   */
+  String rowName();
 
-    int row();
+  /**
+   * Getter.
+   * 
+   * @return The current row.
+   */
+  int row();
 
-    int col();
+  /**
+   * Getter.
+   * 
+   * @return The current column.
+   */
+  int col();
 
 }
